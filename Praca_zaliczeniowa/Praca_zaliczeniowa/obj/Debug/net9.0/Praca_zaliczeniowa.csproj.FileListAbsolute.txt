@@ -1,0 +1,14 @@
+C:\Users\wojci\Desktop\C#\Praca_zaliczeniowa\Praca_zaliczeniowa\obj\Debug\net9.0\Praca_zaliczeniowa.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\wojci\Desktop\C#\Praca_zaliczeniowa\Praca_zaliczeniowa\obj\Debug\net9.0\Praca_zaliczeniowa.AssemblyInfoInputs.cache
+C:\Users\wojci\Desktop\C#\Praca_zaliczeniowa\Praca_zaliczeniowa\obj\Debug\net9.0\Praca_zaliczeniowa.AssemblyInfo.cs
+C:\Users\wojci\Desktop\C#\Praca_zaliczeniowa\Praca_zaliczeniowa\obj\Debug\net9.0\Praca_zaliczeniowa.csproj.CoreCompileInputs.cache
+C:\Users\wojci\Desktop\C#\Praca_zaliczeniowa\Praca_zaliczeniowa\bin\Debug\net9.0\Praca_zaliczeniowa.exe
+C:\Users\wojci\Desktop\C#\Praca_zaliczeniowa\Praca_zaliczeniowa\bin\Debug\net9.0\Praca_zaliczeniowa.deps.json
+C:\Users\wojci\Desktop\C#\Praca_zaliczeniowa\Praca_zaliczeniowa\bin\Debug\net9.0\Praca_zaliczeniowa.runtimeconfig.json
+C:\Users\wojci\Desktop\C#\Praca_zaliczeniowa\Praca_zaliczeniowa\bin\Debug\net9.0\Praca_zaliczeniowa.dll
+C:\Users\wojci\Desktop\C#\Praca_zaliczeniowa\Praca_zaliczeniowa\bin\Debug\net9.0\Praca_zaliczeniowa.pdb
+C:\Users\wojci\Desktop\C#\Praca_zaliczeniowa\Praca_zaliczeniowa\obj\Debug\net9.0\Praca_zaliczeniowa.dll
+C:\Users\wojci\Desktop\C#\Praca_zaliczeniowa\Praca_zaliczeniowa\obj\Debug\net9.0\refint\Praca_zaliczeniowa.dll
+C:\Users\wojci\Desktop\C#\Praca_zaliczeniowa\Praca_zaliczeniowa\obj\Debug\net9.0\Praca_zaliczeniowa.pdb
+C:\Users\wojci\Desktop\C#\Praca_zaliczeniowa\Praca_zaliczeniowa\obj\Debug\net9.0\Praca_zaliczeniowa.genruntimeconfig.cache
+C:\Users\wojci\Desktop\C#\Praca_zaliczeniowa\Praca_zaliczeniowa\obj\Debug\net9.0\ref\Praca_zaliczeniowa.dll
