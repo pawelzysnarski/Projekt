@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -41,7 +41,7 @@ namespace Clubs
             {
                 { Role.Coach,new List<string>{"Make Lineup","Blame player","praise player","Ask for new player","Chat" } },
                 { Role.Medic, new List<string>{"Treat player","Check injury status"} },
-                { Role.Boss, new List<string>{"Make important decisions","Fire staff","Hire staff"} },
+                { Role.Boss, new List<string>{"Make important decisions","Sack staff","Hire staff"} },
                 { Role.Scout, new List<string>{"Scout player","Report on players"} },
                 { Role.Player, new List<string>{"Play in matches","Train"} }
                 
@@ -69,7 +69,6 @@ namespace Clubs
                 int numMidfielders = int.Parse(positions[1]);
                 int numForwards = int.Parse(positions[2]);
 
-            }
             Console.WriteLine("Assign players to positions.");
 
                 List<Player> availablePlayers = Members.OfType<Player>().ToList();
@@ -118,15 +117,27 @@ namespace Clubs
 
                 Console.WriteLine("Lineup set successfully!");
             }
-            public void AddPlayer(Player player)
+            public void HireClubMember(ClubMember clubMember)
             {
-                Members.Add(player);
-                Console.WriteLine($"{player.FirstName} {player.LastName} added to the club.");
+                Members.Add(clubMember);
+                Console.WriteLine($"{clubMember.FirstName} {clubMember.LastName} hired to the club.");
             }
-            public void RemovePlayer(Player player)
+            public void SackClubMember(ClubMember clubMember)
             {
-                Members.Remove(player);
-                Console.WriteLine($"{player.FirstName} {player.LastName} removed from the club.");
+                Members.Remove(clubMember);
+                Console.WriteLine($"{clubMember.FirstName} {clubMember.LastName} sacked from the club.");
+            }
+            public void MakeTeamTraining()
+            {
+                List<Player> players = Members.OfType<Player>().ToList();
+                foreach (Player player in players)
+                {
+                    if (!player.IsInjured)
+                    {
+                        player.Train();
+                    }
+                }
+                Console.WriteLine("Zakończono trening");
             }
         }
         public class ClubMember
@@ -151,7 +162,6 @@ namespace Clubs
         }
         public class Player : ClubMember
         {
-            public Role Role { get; set; } = Role.Player;
             public Position Position { get; set; }
             public int Pace { get; set; }
             public int Shooting { get; set; }
@@ -175,6 +185,46 @@ namespace Clubs
             {
                 return (int)Math.Round((double)(Pace + Shooting + Passing + Dribling + Defense + Physical) / 6);
             }
+            public virtual void Train()
+            {
+                Random random = new Random();
+                int injurystatus = random.Next(200);
+                if (injurystatus == 0)
+                {
+                    IsInjured=true;
+                    Console.WriteLine($"Player {FirstName} {LastName} got injury during training");
+                }
+                else if(injurystatus >= 1&&injurystatus <=5)
+                {
+                    Console.WriteLine($"Player {FirstName} {LastName} has improved");
+                    int bonusstat=random.Next(6);
+                    switch (bonusstat) 
+                    {
+                        case 0:
+                            Pace += 1;
+                            break;
+                        case 1:
+                            Shooting += 1;
+                            break;
+                        case 2:
+                            Passing += 1;
+                            break;
+                        case 3:
+                            Dribling += 1;
+                            break;
+                        case 4:
+                            Defense += 1;
+                            break;
+                        case 5:
+                            Physical += 1;
+                            break;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"Player {FirstName} {LastName} trained");
+                }
+            }
         }
         public class Goalkeeper : Player
         {
@@ -186,6 +236,20 @@ namespace Clubs
             public override int OverallStats()
             {
                 return GoalkeeperStats;
+            }
+            public override void Train()
+            {
+                Random random = new Random();
+                int injurystatus = random.Next(100);
+                if (injurystatus == 0)
+                {
+                    IsInjured = true;
+                    Console.WriteLine($"Player {FirstName} {LastName} got injury during training");
+                }
+                else if (injurystatus == 1 || injurystatus == 2)
+                {
+                    GoalkeeperStats += 1;
+                }
             }
         }
         static void Main(string[] args)
