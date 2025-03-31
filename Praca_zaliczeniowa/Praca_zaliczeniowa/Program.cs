@@ -63,7 +63,7 @@ namespace Clubs
             {
                 Console.WriteLine("Enter the formation (e.g., 4-4-2, 4-3-3, etc.):");
                 string formation = Console.ReadLine();  
-             
+                 if(formation[0] + formation[1]+formation[2]==10){
                 string[] positions = formation.Split('-');
                 int numDefenders = int.Parse(positions[0]);
                 int numMidfielders = int.Parse(positions[1]);
@@ -73,7 +73,11 @@ namespace Clubs
 
                 List<Player> availablePlayers = Members.OfType<Player>().ToList();
 
-                
+                Console.WriteLine("Choose a goalkeeper:");
+                string goalkeeperPosition = "Goalkeeper";
+                Goalkeeper selectedGoalkeeper = (Goalkeeper)availablePlayers.FirstOrDefault(p => p.Position == Position.Goalkeeper);
+                Lineup.Add(Position.Goalkeeper, selectedGoalkeeper);
+                     
                 for (int i = 0; i < numDefenders; i++)
                 {
                     Console.WriteLine($"Choose a defender (LeftBack, CentreBack, RightBack):");
@@ -110,12 +114,11 @@ namespace Clubs
                 }
 
                 
-                Console.WriteLine("Choose a goalkeeper:");
-                string goalkeeperPosition = "Goalkeeper";
-                Goalkeeper selectedGoalkeeper = (Goalkeeper)availablePlayers.FirstOrDefault(p => p.Position == Position.Goalkeeper);
-                Lineup.Add(Position.Goalkeeper, selectedGoalkeeper);
-
+                
                 Console.WriteLine("Lineup set successfully!");
+            }
+            }else{
+                 Console.WriteLine("Podaj poprawną wartość");
             }
             public void HireClubMember(ClubMember clubMember)
             {
