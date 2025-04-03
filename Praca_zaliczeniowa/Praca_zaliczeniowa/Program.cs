@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -40,7 +40,11 @@ namespace Clubs
             public readonly Dictionary<Role, List<string>> Permissions = new Dictionary<Role, List<string>>
             {
                 { Role.Coach,new List<string>{"Make Lineup","Blame player","praise player","Ask for new player","Chat" } },
-                //Wymyśl kilka uprawnień dla pozostałych ról
+                { Role.Medic, new List<string>{"Treat player","Check injury status"} },
+                { Role.Boss, new List<string>{"Make important decisions","Sack staff","Hire staff"} },
+                { Role.Scout, new List<string>{"Scout player","Report on players"} },
+                { Role.Player, new List<string>{"Play in matches","Train"} }
+                
             };
             public bool HasThatPermission(ClubMember clubmember,string permission)
             {
@@ -55,11 +59,89 @@ namespace Clubs
                 Name = name;
                 Members = members;
             }
-            /*
-                Dodaj tutaj jakąś metodę do ustawienia składu
-                Najpierw pyta o formację a potem po kolei o zawodników
-            */
-            //Zrób też dodawanie i usuwanie zawodników
+            public void SetLineup()
+            {
+                Console.WriteLine("Enter the formation (e.g., 4-4-2, 4-3-3, etc.):");
+                string formation = Console.ReadLine();  
+                 if(formation[0] + formation[1]+formation[2]==10){
+                string[] positions = formation.Split('-');
+                int numDefenders = int.Parse(positions[0]);
+                int numMidfielders = int.Parse(positions[1]);
+                int numForwards = int.Parse(positions[2]);
+
+            Console.WriteLine("Assign players to positions.");
+
+                List<Player> availablePlayers = Members.OfType<Player>().ToList();
+
+                Console.WriteLine("Choose a goalkeeper:");
+                string goalkeeperPosition = "Goalkeeper";
+                Goalkeeper selectedGoalkeeper = (Goalkeeper)availablePlayers.FirstOrDefault(p => p.Position == Position.Goalkeeper);
+                Lineup.Add(Position.Goalkeeper, selectedGoalkeeper);
+                     
+                for (int i = 0; i < numDefenders; i++)
+                {
+                    Console.WriteLine($"Choose a defender (LeftBack, CentreBack, RightBack):");
+                    string defenderPosition = Console.ReadLine();
+                    Position defenderPos = Enum.Parse<Position>(defenderPosition, true);
+                    Console.WriteLine($"Choose a player for {defenderPosition}:");
+                    Player selectedDefender = availablePlayers[i];
+                    Lineup.Add(defenderPos, selectedDefender);
+                    availablePlayers.Remove(selectedDefender);
+                }
+
+                
+                for (int i = 0; i < numMidfielders; i++)
+                {
+                    Console.WriteLine($"Choose a midfielder (LeftMidfielder, Midfielder, RightMidfielder):");
+                    string midfielderPosition = Console.ReadLine();
+                    Position midfielderPos = Enum.Parse<Position>(midfielderPosition, true);
+                    Console.WriteLine($"Choose a player for {midfielderPosition}:");
+                    Player selectedMidfielder = availablePlayers[i];
+                    Lineup.Add(midfielderPos, selectedMidfielder);
+                    availablePlayers.Remove(selectedMidfielder);
+                }
+
+                
+                for (int i = 0; i < numForwards; i++)
+                {
+                    Console.WriteLine($"Choose a forward (LeftWinger, RightWinger, Striker):");
+                    string forwardPosition = Console.ReadLine();
+                    Position forwardPos = Enum.Parse<Position>(forwardPosition, true);
+                    Console.WriteLine($"Choose a player for {forwardPosition}:");
+                    Player selectedForward = availablePlayers[i];
+                    Lineup.Add(forwardPos, selectedForward);
+                    availablePlayers.Remove(selectedForward);
+                }
+
+                
+                
+                Console.WriteLine("Lineup set successfully!");
+            }
+            }else{
+                 Console.WriteLine("Podaj poprawną wartość");
+            }
+            public void HireClubMember(ClubMember clubMember)
+            {
+                Members.Add(clubMember);
+                Console.WriteLine($"{clubMember.FirstName} {clubMember.LastName} hired to the club.");
+            }
+            public void SackClubMember(ClubMember clubMember)
+            {
+                Members.Remove(clubMember);
+                Console.WriteLine($"{clubMember.FirstName} {clubMember.LastName} sacked from the club.");
+            }
+            public void MakeTeamTraining()
+            {
+                List<Player> players = Members.OfType<Player>().ToList();
+                foreach (Player player in players)
+                {
+                    if (!player.IsInjured)
+                    {
+                        player.Train();
+                    }
+                }
+                Console.WriteLine("Zakończono trening");
+            }
         }
         public class ClubMember
         {
@@ -83,7 +165,6 @@ namespace Clubs
         }
         public class Player : ClubMember
         {
-            public Role Role { get; set; } = Role.Player;
             public Position Position { get; set; }
             public int Pace { get; set; }
             public int Shooting { get; set; }
@@ -107,6 +188,46 @@ namespace Clubs
             {
                 return (int)Math.Round((double)(Pace + Shooting + Passing + Dribling + Defense + Physical) / 6);
             }
+            public virtual void Train()
+            {
+                Random random = new Random();
+                int injurystatus = random.Next(200);
+                if (injurystatus == 0)
+                {
+                    IsInjured=true;
+                    Console.WriteLine($"Player {FirstName} {LastName} got injury during training");
+                }
+                else if(injurystatus >= 1&&injurystatus <=5)
+                {
+                    Console.WriteLine($"Player {FirstName} {LastName} has improved");
+                    int bonusstat=random.Next(6);
+                    switch (bonusstat) 
+                    {
+                        case 0:
+                            Pace += 1;
+                            break;
+                        case 1:
+                            Shooting += 1;
+                            break;
+                        case 2:
+                            Passing += 1;
+                            break;
+                        case 3:
+                            Dribling += 1;
+                            break;
+                        case 4:
+                            Defense += 1;
+                            break;
+                        case 5:
+                            Physical += 1;
+                            break;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"Player {FirstName} {LastName} trained");
+                }
+            }
         }
         public class Goalkeeper : Player
         {
@@ -118,6 +239,20 @@ namespace Clubs
             public override int OverallStats()
             {
                 return GoalkeeperStats;
+            }
+            public override void Train()
+            {
+                Random random = new Random();
+                int injurystatus = random.Next(100);
+                if (injurystatus == 0)
+                {
+                    IsInjured = true;
+                    Console.WriteLine($"Player {FirstName} {LastName} got injury during training");
+                }
+                else if (injurystatus == 1 || injurystatus == 2)
+                {
+                    GoalkeeperStats += 1;
+                }
             }
         }
         static void Main(string[] args)
