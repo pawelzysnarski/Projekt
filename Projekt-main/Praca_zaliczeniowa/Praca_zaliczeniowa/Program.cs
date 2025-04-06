@@ -332,62 +332,62 @@ namespace Clubs
                 }
             }
             public void DisplayMembersList()
-{
-    Console.WriteLine("Choose which list to display:");
-    Console.WriteLine("1. Players");
-    Console.WriteLine("2. Staff");
-    Console.WriteLine("Enter your choice (1 or 2):");
+                {
+                    Console.WriteLine("Choose which list to display:");
+                    Console.WriteLine("1. Players");
+                    Console.WriteLine("2. Staff");
+                    Console.WriteLine("Enter your choice (1 or 2):");
     
-    string choice = Console.ReadLine();
+                    string choice = Console.ReadLine();
     
-    switch (choice)
-    {
-        case "1":
-            DisplayPlayersList();
-            break;
-        case "2":
-            DisplayStaffList();
-            break;
-        default:
-            Console.WriteLine("Invalid choice. Please try again.");
-            break;
+                    switch (choice)
+                    {
+                        case "1":
+                            DisplayPlayersList();
+                            break;
+                        case "2":
+                        DisplayStaffList();
+                        break;
+                        default:
+                        Console.WriteLine("Invalid choice. Please try again.");
+                        break;
     }
 }
 
-private void DisplayPlayersList()
-{
-    var players = Members.OfType<Player>().OrderBy(p => p.Position).ThenBy(p => p.LastName).ToList();
+            private void DisplayPlayersList()
+                {
+                    var players = Members.OfType<Player>().OrderBy(p => p.Position).ThenBy(p => p.LastName).ToList();
     
-    Console.WriteLine("\nList of Players:");
-    Console.WriteLine("------------------------------------------------------------");
-    Console.WriteLine("| # | Name                | Position           | Overall |");
-    Console.WriteLine("------------------------------------------------------------");
-    
-    foreach (var player in players)
-    {
-        Console.WriteLine($"| {player.Number,2} | {player.FirstName + " " + player.LastName,-20} | {player.Position,-18} | {player.OverallStats(),7} |");
-    }
-    
-    Console.WriteLine("------------------------------------------------------------");
- 
-}
+                        Console.WriteLine("\nList of Players:");
+                        Console.WriteLine("------------------------------------------------------------");
+                        Console.WriteLine("| # | Name                | Position           | Overall |");
+                        Console.WriteLine("------------------------------------------------------------");
+                        
+                        foreach (var player in players)
+                        {
+                            Console.WriteLine($"| {player.Number,2} | {player.FirstName + " " + player.LastName,-20} | {player.Position,-18} | {player.OverallStats(),7} |");
+                        }
+                        
+                        Console.WriteLine("------------------------------------------------------------");
+                     
+                }
 
-private void DisplayStaffList()
-{
-    var staffMembers = Members.OfType<Staff>().OrderBy(s => s.Role).ThenBy(s => s.LastName).ToList();
-    
-    Console.WriteLine("\nList of Staff:");
-    Console.WriteLine("------------------------------------------------------------");
-    Console.WriteLine("| Role      | Name                | Age | Experience (yrs) |");
-    Console.WriteLine("------------------------------------------------------------");
-    
-    foreach (var staff in staffMembers)
-    {
-        Console.WriteLine($"| {staff.Role,-9} | {staff.FirstName + " " + staff.LastName,-20} | {staff.Age,3} | {staff.YearsOfExperience,16} |");
-    }
-    
-    Console.WriteLine("------------------------------------------------------------");
-    
+            private void DisplayStaffList()
+            {
+                var staffMembers = Members.OfType<Staff>().OrderBy(s => s.Role).ThenBy(s => s.LastName).ToList();
+                
+                Console.WriteLine("\nList of Staff:");
+                Console.WriteLine("------------------------------------------------------------");
+                Console.WriteLine("| Role      | Name                | Age | Experience (yrs) |");
+                Console.WriteLine("------------------------------------------------------------");
+                
+                foreach (var staff in staffMembers)
+                {
+                    Console.WriteLine($"| {staff.Role,-9} | {staff.FirstName + " " + staff.LastName,-20} | {staff.Age,3} | {staff.YearsOfExperience,16} |");
+                }
+                
+                Console.WriteLine("------------------------------------------------------------");
+                
 }
         }
         static void Main(string[] args)
@@ -429,6 +429,7 @@ private void DisplayStaffList()
             }
             Club club = new Club("Dębiec FC", lista);
             club.MakeTeamTraining();
+            club.DisplayMembersList();
         }
     }
 }
