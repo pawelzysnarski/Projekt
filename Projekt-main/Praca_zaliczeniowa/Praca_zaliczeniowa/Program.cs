@@ -63,130 +63,127 @@ namespace Clubs
                 Members = members;
                 Messages = messages;
             }
-            public void SetLineup()
-{
-    Console.WriteLine("Enter the formation (e.g., 4-4-2, 4-3-3, etc.):");
-    string formation = Console.ReadLine();
-
-    string[] positions = formation.Split('-');
-    int numDefenders = int.Parse(positions[0]);
-    int numMidfielders = int.Parse(positions[1]);
-    int numForwards = int.Parse(positions[2]);
-
-    Console.WriteLine("Assign players to positions.");
-
-    List<Player> availablePlayers = Members.OfType<Player>().ToList();
-    Lineup = new Dictionary<Position, ClubMember>();
-
-    // Assign goalkeeper
-    Console.WriteLine("Available goalkeepers:");
-    var goalkeepers = availablePlayers.Where(p => p.Position == Position.Goalkeeper).ToList();
-
-    for (int j = 0; j < goalkeepers.Count; j++)
-    {
-        Console.WriteLine($"{j + 1}. {goalkeepers[j].FirstName} {goalkeepers[j].LastName}");
-    }
-
-    Console.WriteLine("Select goalkeeper number:");
-    int gkNumber = int.Parse(Console.ReadLine()) - 1;
-    Player selectedGoalkeeper = goalkeepers[gkNumber];
-    Lineup.Add(Position.Goalkeeper, selectedGoalkeeper);
-    availablePlayers.Remove(selectedGoalkeeper);
-
-    // Helper method to display players with suitable ones highlighted
-    void DisplayPlayersWithHighlight(Position targetPosition)
-    {
-        var outfieldPlayers = availablePlayers.Where(p => p.Position != Position.Goalkeeper).ToList();
-
-        Console.WriteLine($"Available players for {targetPosition}:");
-        Console.WriteLine("(Players matching position are shown in green)");
-
-        int index = 1;
-        foreach (var player in outfieldPlayers.OrderByDescending(p => p.Position == targetPosition))
-        {
-            if (player.Position == targetPosition)
+                        public void SetLineup()
             {
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($"{index++}. {player.FirstName} {player.LastName} ({player.Position}) - Overall: {player.OverallStats()}");
-                Console.ResetColor();
-            }
-            else
-            {
-                Console.WriteLine($"{index++}. {player.FirstName} {player.LastName} ({player.Position}) - Overall: {player.OverallStats()}");
-            }
-        }
-    }
+                Console.WriteLine("Enter the formation (e.g., 4-4-2, 4-3-3, etc.):");
+                string formation = Console.ReadLine();
 
-    // Assign defenders
-    for (int i = 0; i < numDefenders; i++)
-    {
-        Console.WriteLine($"Choose defender type (LeftBack, CentreBack, RightBack):");
-        string defenderPosition = Console.ReadLine();
-        Position defenderPos = Enum.Parse<Position>(defenderPosition, true);
+                string[] positions = formation.Split('-');
+                int numDefenders = int.Parse(positions[0]);
+                int numMidfielders = int.Parse(positions[1]);
+                int numForwards = int.Parse(positions[2]);
 
-        DisplayPlayersWithHighlight(defenderPos);
+                Console.WriteLine("Assign players to positions.");
 
-        Console.WriteLine("Select player number:");
-        int playerNumber = int.Parse(Console.ReadLine()) - 1;
+                List<Player> availablePlayers = Members.OfType<Player>().ToList();
+                Lineup = new Dictionary<Position, ClubMember>();
 
-        // Get the actual player from ordered list
-        var outfieldPlayers = availablePlayers.Where(p => p.Position != Position.Goalkeeper).ToList();
-        var orderedPlayers = outfieldPlayers.OrderByDescending(p => p.Position == defenderPos).ToList();
-        Player selectedDefender = orderedPlayers[playerNumber];
+                // Assign goalkeeper
+                Console.WriteLine("Available goalkeepers:");
+                var goalkeepers = availablePlayers.Where(p => p.Position == Position.Goalkeeper).ToList();
 
-        Lineup.Add(defenderPos, selectedDefender);
-        availablePlayers.Remove(selectedDefender);
-    }
+                for (int j = 0; j < goalkeepers.Count; j++)
+                {
+                    Console.WriteLine($"{j + 1}. {goalkeepers[j].FirstName} {goalkeepers[j].LastName}");
+                }
 
-    // Assign midfielders
-    for (int i = 0; i < numMidfielders; i++)
-    {
-        Console.WriteLine($"Choose midfielder type (LeftMidfielder, Midfielder, RightMidfielder, DefensiveMidfielder, OffensiveMidfielder):");
-        string midfielderPosition = Console.ReadLine();
-        Position midfielderPos = Enum.Parse<Position>(midfielderPosition, true);
+                Console.WriteLine("Select goalkeeper number:");
+                int gkNumber = int.Parse(Console.ReadLine()) - 1;
+                Player selectedGoalkeeper = goalkeepers[gkNumber];
+                Lineup.Add(Position.Goalkeeper, selectedGoalkeeper);
+                availablePlayers.Remove(selectedGoalkeeper);
 
-        DisplayPlayersWithHighlight(midfielderPos);
+                // Helper method to display players with suitable ones highlighted
+                void DisplayPlayersWithHighlight(Position targetPosition)
+                {
+                    var outfieldPlayers = availablePlayers.Where(p => p.Position != Position.Goalkeeper).ToList();
 
-        Console.WriteLine("Select player number:");
-        int playerNumber = int.Parse(Console.ReadLine()) - 1;
+                    Console.WriteLine($"Available players for {targetPosition}:");
+                    Console.WriteLine("(Players matching position are shown in green)");
 
-        var outfieldPlayers = availablePlayers.Where(p => p.Position != Position.Goalkeeper).ToList();
-        var orderedPlayers = outfieldPlayers.OrderByDescending(p => p.Position == midfielderPos).ToList();
-        Player selectedMidfielder = orderedPlayers[playerNumber];
+                    int index = 1;
+                    foreach (var player in outfieldPlayers.OrderByDescending(p => p.Position == targetPosition))
+                    {
+                        if (player.Position == targetPosition)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Green;
+                            Console.WriteLine($"{index++}. {player.FirstName} {player.LastName} ({player.Position}) - Overall: {player.OverallStats()}");
+                            Console.ResetColor();
+                        }
+                        else
+                        {
+                            Console.WriteLine($"{index++}. {player.FirstName} {player.LastName} ({player.Position}) - Overall: {player.OverallStats()}");
+                        }
+                    }
+                }
 
-        Lineup.Add(midfielderPos, selectedMidfielder);
-        availablePlayers.Remove(selectedMidfielder);
-    }
+                // Assign defenders
+                for (int i = 0; i < numDefenders; i++)
+                {
+                    Console.WriteLine($"Choose defender type (LeftBack, CentreBack, RightBack):");
+                    string defenderPosition = Console.ReadLine();
+                    Position defenderPos = Enum.Parse<Position>(defenderPosition, true);
 
-    // Assign forwards
-    for (int i = 0; i < numForwards; i++)
-    {
-        Console.WriteLine($"Choose forward type (LeftWinger, RightWinger, Striker):");
-        string forwardPosition = Console.ReadLine();
-        Position forwardPos = Enum.Parse<Position>(forwardPosition, true);
+                    DisplayPlayersWithHighlight(defenderPos);
 
-        DisplayPlayersWithHighlight(forwardPos);
+                    Console.WriteLine("Select player number:");
+                    int playerNumber = int.Parse(Console.ReadLine()) - 1;
 
-        Console.WriteLine("Select player number:");
-        int playerNumber = int.Parse(Console.ReadLine()) - 1;
+                    // Get the actual player from ordered list
+                    var outfieldPlayers = availablePlayers.Where(p => p.Position != Position.Goalkeeper).ToList();
+                    var orderedPlayers = outfieldPlayers.OrderByDescending(p => p.Position == defenderPos).ToList();
+                    Player selectedDefender = orderedPlayers[playerNumber];
 
-        var outfieldPlayers = availablePlayers.Where(p => p.Position != Position.Goalkeeper).ToList();
-        var orderedPlayers = outfieldPlayers.OrderByDescending(p => p.Position == forwardPos).ToList();
-        Player selectedForward = orderedPlayers[playerNumber];
+                    Lineup.Add(defenderPos, selectedDefender);
+                    availablePlayers.Remove(selectedDefender);
+                }
 
-        Lineup.Add(forwardPos, selectedForward);
-        availablePlayers.Remove(selectedForward);
-    }
+                // Assign midfielders
+                for (int i = 0; i < numMidfielders; i++)
+                {
+                    Console.WriteLine($"Choose midfielder type (LeftMidfielder, Midfielder, RightMidfielder, DefensiveMidfielder, OffensiveMidfielder):");
+                    string midfielderPosition = Console.ReadLine();
+                    Position midfielderPos = Enum.Parse<Position>(midfielderPosition, true);
 
-    Console.WriteLine("Lineup set successfully!");
-    Console.WriteLine("\nSelected lineup:");
-    foreach (var position in Lineup)
-    {
-        Console.WriteLine($"{position.Key}: {position.Value.FirstName} {position.Value.LastName}");
-    }
-}
+                    DisplayPlayersWithHighlight(midfielderPos);
 
+                    Console.WriteLine("Select player number:");
+                    int playerNumber = int.Parse(Console.ReadLine()) - 1;
 
+                    var outfieldPlayers = availablePlayers.Where(p => p.Position != Position.Goalkeeper).ToList();
+                    var orderedPlayers = outfieldPlayers.OrderByDescending(p => p.Position == midfielderPos).ToList();
+                    Player selectedMidfielder = orderedPlayers[playerNumber];
+
+                    Lineup.Add(midfielderPos, selectedMidfielder);
+                    availablePlayers.Remove(selectedMidfielder);
+                }
+
+                // Assign forwards
+                for (int i = 0; i < numForwards; i++)
+                {
+                    Console.WriteLine($"Choose forward type (LeftWinger, RightWinger, Striker):");
+                    string forwardPosition = Console.ReadLine();
+                    Position forwardPos = Enum.Parse<Position>(forwardPosition, true);
+
+                    DisplayPlayersWithHighlight(forwardPos);
+
+                    Console.WriteLine("Select player number:");
+                    int playerNumber = int.Parse(Console.ReadLine()) - 1;
+
+                    var outfieldPlayers = availablePlayers.Where(p => p.Position != Position.Goalkeeper).ToList();
+                    var orderedPlayers = outfieldPlayers.OrderByDescending(p => p.Position == forwardPos).ToList();
+                    Player selectedForward = orderedPlayers[playerNumber];
+
+                    Lineup.Add(forwardPos, selectedForward);
+                    availablePlayers.Remove(selectedForward);
+                }
+
+                Console.WriteLine("Lineup set successfully!");
+                Console.WriteLine("\nSelected lineup:");
+                foreach (var position in Lineup)
+                {
+                    Console.WriteLine($"{position.Key}: {position.Value.FirstName} {position.Value.LastName}");
+                }
             }
             public void HireClubMember(ClubMember clubMember)
             {
