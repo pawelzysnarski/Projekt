@@ -192,7 +192,7 @@ namespace Clubs
                     availablePlayers.Remove(selectedForward);
                 }
 
-                
+
             }
             public void HireClubMember(ClubMember clubMember)
             {
@@ -245,16 +245,16 @@ namespace Clubs
                 var players = Members.OfType<Player>().OrderBy(p => p.Position).ThenBy(p => p.LastName).ToList();
 
                 Console.WriteLine("\nList of Players:");
-                Console.WriteLine("------------------------------------------------------------");
-                Console.WriteLine("| # | Name                | Position           | Overall |");
-                Console.WriteLine("------------------------------------------------------------");
+                Console.WriteLine("------------------------------------------------------------------");
+                Console.WriteLine("| #  | Name                      | Position            | Overall |");
+                Console.WriteLine("------------------------------------------------------------------");
 
                 foreach (var player in players)
                 {
-                    Console.WriteLine($"| {player.Number,2} | {player.FirstName + " " + player.LastName,-20} | {player.Position,-18} | {player.OverallStats(),7} |");
+                    Console.WriteLine($"| {player.Number,2} | {player.FirstName + " " + player.LastName,-25} | {player.Position,-19} | {player.OverallStats(),7} |");
                 }
 
-                Console.WriteLine("------------------------------------------------------------");
+                Console.WriteLine("------------------------------------------------------------------");
 
             }
 
@@ -263,16 +263,16 @@ namespace Clubs
                 var staffMembers = Members.OfType<Staff>().OrderBy(s => s.Role).ThenBy(s => s.LastName).ToList();
 
                 Console.WriteLine("\nList of Staff:");
-                Console.WriteLine("------------------------------------------------------------");
-                Console.WriteLine("| Role      | Name                | Age | Experience (yrs) |");
-                Console.WriteLine("------------------------------------------------------------");
+                Console.WriteLine("-------------------------------------------------------------");
+                Console.WriteLine("| Role      | Name                 | Age | Experience (yrs) |");
+                Console.WriteLine("-------------------------------------------------------------");
 
                 foreach (var staff in staffMembers)
                 {
                     Console.WriteLine($"| {staff.Role,-9} | {staff.FirstName + " " + staff.LastName,-20} | {staff.Age,3} | {staff.YearsOfExperience,16} |");
                 }
 
-                Console.WriteLine("------------------------------------------------------------");
+                Console.WriteLine("-------------------------------------------------------------");
             }
             public class AppDbContext : DbContext
             {
