@@ -33,6 +33,19 @@ INSERT INTO `goalkeepers` (`Number`, `GoalkeeperStats`) VALUES
 	(41, 71),
 	(98, 72);
 
+-- Zrzut struktury tabela club.messages
+CREATE TABLE IF NOT EXISTS `messages` (
+  `ID` int(11) NOT NULL AUTO_INCREMENT,
+  `Member_ID` int(11) DEFAULT NULL,
+  `Content` varchar(50) DEFAULT NULL,
+  `IsReaded` tinyint(4) DEFAULT 0,
+  PRIMARY KEY (`ID`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- Zrzucanie danych dla tabeli club.messages: ~1 rows (około)
+INSERT INTO `messages` (`ID`, `Member_ID`, `Content`, `IsReaded`) VALUES
+	(1, 104, 'Srały muchy bedzie wiosna', 0);
+
 -- Zrzut struktury tabela club.players
 CREATE TABLE IF NOT EXISTS `players` (
   `FirstName` varchar(50) NOT NULL DEFAULT '0',
@@ -89,17 +102,19 @@ CREATE TABLE IF NOT EXISTS `staff` (
   `Age` int(11) DEFAULT NULL,
   `Role` enum('Coach','Medic','Boss','Scout') DEFAULT NULL,
   `YearsOfExperience` int(11) DEFAULT NULL,
-  `DateOfEndTask` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+  `DateOfEndTask` datetime DEFAULT NULL,
+  `ID` int(11) NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (`ID`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=107 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 -- Zrzucanie danych dla tabeli club.staff: ~6 rows (około)
-INSERT INTO `staff` (`FirstName`, `LastName`, `Age`, `Role`, `YearsOfExperience`, `DateOfEndTask`) VALUES
-	('Jan', 'Kowalski', 45, 'Boss', 14, NULL),
-	('Michał', 'Prodiż', 70, 'Coach', 47, NULL),
-	('Antoine', 'Dedeme', 31, 'Medic', 3, NULL),
-	('Carlo', 'Viniary', 45, 'Medic', 20, NULL),
-	('Stefan', 'Zagajnik', 25, 'Scout', 2, NULL),
-	('Antonio', 'Conti', 48, 'Scout', 23, NULL);
+INSERT INTO `staff` (`FirstName`, `LastName`, `Age`, `Role`, `YearsOfExperience`, `DateOfEndTask`, `ID`) VALUES
+	('Jan', 'Kowalski', 45, 'Boss', 14, NULL, 101),
+	('Michał', 'Prodiż', 70, 'Coach', 47, NULL, 102),
+	('Antoine', 'Dedeme', 31, 'Medic', 3, NULL, 103),
+	('Carlo', 'Viniary', 45, 'Medic', 20, NULL, 104),
+	('Stefan', 'Zagajnik', 25, 'Scout', 2, NULL, 105),
+	('Antonio', 'Conti', 48, 'Scout', 23, NULL, 106);
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
