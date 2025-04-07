@@ -57,13 +57,13 @@ namespace Clubs
                 return false;
             }
 
-            public Club(string name, List<ClubMember> members,List<Message> messages)
+            public Club(string name, List<ClubMember> members, List<Message> messages)
             {
                 Name = name;
                 Members = members;
                 Messages = messages;
             }
-                        public void SetLineup()
+            public void SetLineup()
             {
                 Console.WriteLine("Enter the formation (e.g., 4-4-2, 4-3-3, etc.):");
                 string formation = Console.ReadLine();
@@ -78,31 +78,14 @@ namespace Clubs
                 List<Player> availablePlayers = Members.OfType<Player>().ToList();
                 Lineup = new Dictionary<Position, ClubMember>();
 
-                // Assign goalkeeper
-                Console.WriteLine("Available goalkeepers:");
-                var goalkeepers = availablePlayers.Where(p => p.Position == Position.Goalkeeper).ToList();
-
-                for (int j = 0; j < goalkeepers.Count; j++)
-                {
-                    Console.WriteLine($"{j + 1}. {goalkeepers[j].FirstName} {goalkeepers[j].LastName}");
-                }
-
-                Console.WriteLine("Select goalkeeper number:");
-                int gkNumber = int.Parse(Console.ReadLine()) - 1;
-                Player selectedGoalkeeper = goalkeepers[gkNumber];
-                Lineup.Add(Position.Goalkeeper, selectedGoalkeeper);
-                availablePlayers.Remove(selectedGoalkeeper);
-
-                // Helper method to display players with suitable ones highlighted
+                // Helper method to display players with position highlighting
                 void DisplayPlayersWithHighlight(Position targetPosition)
                 {
-                    var outfieldPlayers = availablePlayers.Where(p => p.Position != Position.Goalkeeper).ToList();
-
                     Console.WriteLine($"Available players for {targetPosition}:");
                     Console.WriteLine("(Players matching position are shown in green)");
 
                     int index = 1;
-                    foreach (var player in outfieldPlayers.OrderByDescending(p => p.Position == targetPosition))
+                    foreach (var player in availablePlayers.OrderByDescending(p => p.Position == targetPosition))
                     {
                         if (player.Position == targetPosition)
                         {
@@ -117,72 +100,125 @@ namespace Clubs
                     }
                 }
 
-                // Assign defenders
+                // Assign goalkeeper (only one)
+                Console.WriteLine("\nAvailable goalkeepers:");
+                var goalkeepers = availablePlayers.Where(p => p.Position == Position.Goalkeeper).ToList();
+                for (int j = 0; j < goalkeepers.Count; j++)
+                {
+                    Console.WriteLine($"{j + 1}. {goalkeepers[j].FirstName} {goalkeepers[j].LastName}");
+                }
+
+                Console.WriteLine("Select goalkeeper number:");
+                int gkNumber = int.Parse(Console.ReadLine()) - 1;
+                Player selectedGoalkeeper = goalkeepers[gkNumber];
+                Lineup.Add(Position.Goalkeeper, selectedGoalkeeper);
+                availablePlayers.Remove(selectedGoalkeeper);
+
+                // Assign defenders with multiple players per position
+                Console.WriteLine("\n=== DEFENDERS ===");
                 for (int i = 0; i < numDefenders; i++)
                 {
-                    Console.WriteLine($"Choose defender type (LeftBack, CentreBack, RightBack):");
-                    string defenderPosition = Console.ReadLine();
-                    Position defenderPos = Enum.Parse<Position>(defenderPosition, true);
+                    Console.WriteLine($"\nChoosing defender {i + 1} of {numDefenders}:");
+                    Console.WriteLine("Available positions: LeftBack, CentreBack, RightBack");
+                    Console.Write("Enter position: ");
+                    Position defenderPos = Enum.Parse<Position>(Console.ReadLine(), true);
 
                     DisplayPlayersWithHighlight(defenderPos);
 
                     Console.WriteLine("Select player number:");
                     int playerNumber = int.Parse(Console.ReadLine()) - 1;
 
-                    // Get the actual player from ordered list
-                    var outfieldPlayers = availablePlayers.Where(p => p.Position != Position.Goalkeeper).ToList();
-                    var orderedPlayers = outfieldPlayers.OrderByDescending(p => p.Position == defenderPos).ToList();
+                    // Get the selected player
+                    var orderedPlayers = availablePlayers.OrderByDescending(p => p.Position == defenderPos).ToList();
                     Player selectedDefender = orderedPlayers[playerNumber];
 
-                    Lineup.Add(defenderPos, selectedDefender);
+                    // Create unique key if position already exists
+                    Position lineupKey = defenderPos;
+                    if (Lineup.ContainsKey(defenderPos))
+                    {
+                        lineupKey = (Position)((int)defenderPos + i + 1); // Create unique key
+                    }
+
+                    Lineup.Add(lineupKey, selectedDefender);
                     availablePlayers.Remove(selectedDefender);
                 }
 
-                // Assign midfielders
+                // Assign midfielders with multiple players per position
+                Console.WriteLine("\n=== MIDFIELDERS ===");
                 for (int i = 0; i < numMidfielders; i++)
                 {
-                    Console.WriteLine($"Choose midfielder type (LeftMidfielder, Midfielder, RightMidfielder, DefensiveMidfielder, OffensiveMidfielder):");
-                    string midfielderPosition = Console.ReadLine();
-                    Position midfielderPos = Enum.Parse<Position>(midfielderPosition, true);
+                    Console.WriteLine($"\nChoosing midfielder {i + 1} of {numMidfielders}:");
+                    Console.WriteLine("Available positions: LeftMidfielder, Midfielder, RightMidfielder, DefensiveMidfielder, OffensiveMidfielder");
+                    Console.Write("Enter position: ");
+                    Position midfielderPos = Enum.Parse<Position>(Console.ReadLine(), true);
 
                     DisplayPlayersWithHighlight(midfielderPos);
 
                     Console.WriteLine("Select player number:");
                     int playerNumber = int.Parse(Console.ReadLine()) - 1;
 
-                    var outfieldPlayers = availablePlayers.Where(p => p.Position != Position.Goalkeeper).ToList();
-                    var orderedPlayers = outfieldPlayers.OrderByDescending(p => p.Position == midfielderPos).ToList();
+                    var orderedPlayers = availablePlayers.OrderByDescending(p => p.Position == midfielderPos).ToList();
                     Player selectedMidfielder = orderedPlayers[playerNumber];
 
-                    Lineup.Add(midfielderPos, selectedMidfielder);
+                    Position lineupKey = midfielderPos;
+                    if (Lineup.ContainsKey(midfielderPos))
+                    {
+                        lineupKey = (Position)((int)midfielderPos + i + 1);
+                    }
+
+                    Lineup.Add(lineupKey, selectedMidfielder);
                     availablePlayers.Remove(selectedMidfielder);
                 }
 
-                // Assign forwards
+                // Assign forwards with multiple players per position
+                Console.WriteLine("\n=== FORWARDS ===");
                 for (int i = 0; i < numForwards; i++)
                 {
-                    Console.WriteLine($"Choose forward type (LeftWinger, RightWinger, Striker):");
-                    string forwardPosition = Console.ReadLine();
-                    Position forwardPos = Enum.Parse<Position>(forwardPosition, true);
+                    Console.WriteLine($"\nChoosing forward {i + 1} of {numForwards}:");
+                    Console.WriteLine("Available positions: LeftWinger, RightWinger, Striker");
+                    Console.Write("Enter position: ");
+                    Position forwardPos = Enum.Parse<Position>(Console.ReadLine(), true);
 
                     DisplayPlayersWithHighlight(forwardPos);
 
                     Console.WriteLine("Select player number:");
                     int playerNumber = int.Parse(Console.ReadLine()) - 1;
 
-                    var outfieldPlayers = availablePlayers.Where(p => p.Position != Position.Goalkeeper).ToList();
-                    var orderedPlayers = outfieldPlayers.OrderByDescending(p => p.Position == forwardPos).ToList();
+                    var orderedPlayers = availablePlayers.OrderByDescending(p => p.Position == forwardPos).ToList();
                     Player selectedForward = orderedPlayers[playerNumber];
 
-                    Lineup.Add(forwardPos, selectedForward);
+                    Position lineupKey = forwardPos;
+                    if (Lineup.ContainsKey(forwardPos))
+                    {
+                        lineupKey = (Position)((int)forwardPos + i + 1);
+                    }
+
+                    Lineup.Add(lineupKey, selectedForward);
                     availablePlayers.Remove(selectedForward);
                 }
 
-                Console.WriteLine("Lineup set successfully!");
-                Console.WriteLine("\nSelected lineup:");
-                foreach (var position in Lineup)
+                // Display final lineup
+                Console.WriteLine("\nLineup set successfully!");
+                Console.WriteLine("\n=== SELECTED LINEUP ===");
+
+                // Group by base position (without the +i modification)
+                var groupedLineup = Lineup.GroupBy(kvp =>
+                    Enum.IsDefined(typeof(Position), kvp.Key) ? kvp.Key : (Position)((int)kvp.Key / 10 * 10));
+
+                foreach (var group in groupedLineup)
                 {
-                    Console.WriteLine($"{position.Key}: {position.Value.FirstName} {position.Value.LastName}");
+                    if (group.Count() > 1)
+                    {
+                        Console.WriteLine($"{group.Key}s:");
+                        foreach (var player in group)
+                        {
+                            Console.WriteLine($"- {player.Value.FirstName} {player.Value.LastName}");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"{group.Key}: {group.First().Value.FirstName} {group.First().Value.LastName}");
+                    }
                 }
             }
             public void HireClubMember(ClubMember clubMember)
@@ -202,7 +238,7 @@ namespace Clubs
                 {
                     if (!player.IsInjured)
                     {
-                        if(player is Goalkeeper goalkeeper)
+                        if (player is Goalkeeper goalkeeper)
                         {
                             goalkeeper.Train();
                         }
@@ -249,10 +285,12 @@ namespace Clubs
 
                 foreach (var player in players)
                 {
-                    if (player is Goalkeeper goalkeeper){
+                    if (player is Goalkeeper goalkeeper)
+                    {
                         Console.WriteLine($"| {goalkeeper.Number,2} | {goalkeeper.FirstName + " " + goalkeeper.LastName,-25} | {goalkeeper.Position,-19} | {goalkeeper.OverallStats(),7} |");
                     }
-                    else {
+                    else
+                    {
                         Console.WriteLine($"| {player.Number,2} | {player.FirstName + " " + player.LastName,-25} | {player.Position,-19} | {player.OverallStats(),7} |");
                     }
                 }
@@ -285,13 +323,13 @@ namespace Clubs
                 public DbSet<Message> messages { get; set; }
                 protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
                 {
-                    optionsBuilder.UseMySql("Server=localhost;Port=3305;Database=club;User=root;Password='123';",
+                    optionsBuilder.UseMySql("Server=localhost;Port=3306;Database=club;User=root;Password='';",
                         new MySqlServerVersion(new Version(11, 6, 0)));
                 }
                 protected override void OnModelCreating(ModelBuilder modelBuilder)
                 {
-                    modelBuilder.Entity<Player>().HasKey(p=>p.Number);
-                    modelBuilder.Entity<Staff>().HasKey(s=>s.ID);
+                    modelBuilder.Entity<Player>().HasKey(p => p.Number);
+                    modelBuilder.Entity<Staff>().HasKey(s => s.ID);
                     modelBuilder.Entity<Message>().HasKey(m => m.ID);
                     modelBuilder.Entity<Player>().ToTable("players");
                     modelBuilder.Entity<Staff>().ToTable("staff");
@@ -380,7 +418,7 @@ namespace Clubs
                     }
                 }
             }
-            
+
             public class Player : ClubMember
             {
                 public Position Position { get; set; }
@@ -510,23 +548,23 @@ namespace Clubs
                 List<ClubMember> lista = new List<ClubMember>();
                 using (var context = new AppDbContext())
                 {
-                    var players = context.players.Where(p=>p.Position!=Position.Goalkeeper).ToList();
+                    var players = context.players.Where(p => p.Position != Position.Goalkeeper).ToList();
                     foreach (var player in players)
                     {
-                            lista.Add(new Player(
-                            player.Number,
-                            player.Position,
-                            player.Pace,
-                            player.Shooting,
-                            player.Passing,
-                            player.Dribling,
-                            player.Defense,
-                            player.Physical,
-                            player.IsInjured,
-                            player.FirstName,
-                            player.LastName,
-                            player.Age));
-                        
+                        lista.Add(new Player(
+                        player.Number,
+                        player.Position,
+                        player.Pace,
+                        player.Shooting,
+                        player.Passing,
+                        player.Dribling,
+                        player.Defense,
+                        player.Physical,
+                        player.IsInjured,
+                        player.FirstName,
+                        player.LastName,
+                        player.Age));
+
                     }
                 }
                 using (var context = new AppDbContext())
@@ -580,7 +618,7 @@ namespace Clubs
                             ));
                     }
                 }
-                Club club = new Club("Dębiec FC", lista,messageslist);
+                Club club = new Club("Dębiec FC", lista, messageslist);
                 club.MakeTeamTraining();
                 club.DisplayMembersList();
                 club.SetLineup();
