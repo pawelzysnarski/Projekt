@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 namespace Clubs
@@ -22,8 +24,8 @@ namespace Clubs
         {
             Goalkeeper,
             LeftBack,
-            RightBack,
             CentreBack,
+            RightBack,
             DefensiveMidfielder,
             Midfielder,
             OffensiveMidfielder,
@@ -39,9 +41,10 @@ namespace Clubs
             public string Name { get; set; }
             public List<ClubMember> Members { get; set; }
             public Dictionary<Position, ClubMember> Lineup { get; set; }
+            public Action<string,ClubMember> MessageSender { get; set; }
             public readonly Dictionary<Role, List<string>> Permissions = new Dictionary<Role, List<string>>
             {
-                { Role.Coach,new List<string>{"Make Lineup","Blame player","praise player","Ask for new player","Chat" } },
+                { Role.Coach,new List<string>{"Make lineup","Make team training session","Chat" } },
                 { Role.Medic, new List<string>{"Treat player","Check injury status"} },
                 { Role.Boss, new List<string>{"Make important decisions","Sack staff","Hire staff"} },
                 { Role.Scout, new List<string>{"Scout player","Report on players"} },
@@ -62,6 +65,240 @@ namespace Clubs
                 Name = name;
                 Members = members;
                 Messages = messages;
+            }
+            public void MyMessages(ClubMember clubMember)
+            {
+                    Console.WriteLine("Your messages:");
+                    foreach (var message in Messages)
+                    {
+                        if (clubMember is Staff staff)
+                        {
+                            if (message.Member_ID == staff.ID)
+                            {
+                                message.ReadMessage();
+                            }
+                        }
+                        else if (clubMember is Player player)
+                        {
+                            if(message.Member_ID == player.Number)
+                            {
+                                message.ReadMessage();
+                            }
+                            
+                        }
+                    }
+            }
+            public void SendMessage(ClubMember clubMember)
+            {
+                Console.WriteLine("Type a content of message: ");
+                string content = Console.ReadLine();
+                while (string.IsNullOrEmpty(content))
+                {
+                    Console.WriteLine("Content message cannot be empty. Type a content of message: ");
+                    content = Console.ReadLine();
+                }
+                Console.Clear();
+                bool checker=false;
+                while (!checker)
+                {
+                    Console.WriteLine("Choose a type of receiver: ");
+                    Console.WriteLine("1. Public message (to all club members)");
+                    Console.WriteLine("2. Group message (to specific group");
+                    Console.WriteLine("3. Private message (to specific member)");
+                    string choice = Console.ReadLine();
+                    switch (choice)
+                    {
+                        case "1":
+                            MessageSender = SendToAll;
+                            MessageSender(content, clubMember);
+                            checker = true;
+                            break;
+                        case "2":
+                            MessageSender = SendToSpecificGroup;
+                            MessageSender(content, clubMember);
+                            checker = true;
+                            break;
+                        case "3":
+                            MessageSender = SendToSpecificPerson;
+                            MessageSender(content, clubMember);
+                            checker = true;
+                            break;
+                    }
+                }
+            }
+            public void SendToAll(string content,ClubMember sender)
+            {
+                foreach (var clubMember in Members)
+                {
+                    if (sender == clubMember)
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        if (clubMember is Staff staff)
+                        {
+                                Message message = new Message
+                                {
+                                    Sender_Name = $"{sender.FirstName} {sender.LastName}",
+                                    Member_ID = staff.ID,
+                                    Content = content,
+                                    IsReaded = false
+                                };
+                                using (var context = new AppDbContext())
+                                {
+                                    context.messages.Add(message);
+                                    context.SaveChanges();
+                                }
+                        }
+                        else if (clubMember is Player player)
+                        {
+                                Message message = new Message
+                                {
+                                    Sender_Name = $"{sender.FirstName} {sender.LastName}",
+                                    Member_ID = player.Number,
+                                    Content = content,
+                                    IsReaded = false
+                                };
+                                using (var context = new AppDbContext())
+                                {
+                                    context.messages.Add(message);
+                                    context.SaveChanges();
+                                }
+                            
+
+                        }
+                    }
+                }
+            }
+            public void SendToSpecificGroup(string content, ClubMember sender)
+            {
+                bool checker = false;
+                while (!checker)
+                {
+                    Console.WriteLine("Choose a group to send the message to:");
+                    Console.WriteLine("1. Players");
+                    Console.WriteLine("2. Staff");
+                    string choice = Console.ReadLine();
+                    switch (choice)
+                    {
+                        case "1":
+                            foreach (var player in Members.OfType<Player>())
+                            {
+                                if (sender == player)
+                                {
+                                    continue;
+                                }
+                                else
+                                {
+                                    Message message = new Message
+                                    {
+                                        Sender_Name = $"{sender.FirstName} {sender.LastName}",
+                                        Member_ID = player.Number,
+                                        Content = content,
+                                        IsReaded = false
+                                    };
+                                    using (var context = new AppDbContext())
+                                    {
+                                        context.messages.Add(message);
+                                        context.SaveChanges();
+                                    }
+                                }
+                            }
+                            checker = true;
+                            break;
+                        case "2":
+                            foreach (var staff in Members.OfType<Staff>())
+                            {
+                                if (sender == staff)
+                                {
+                                    continue;
+                                }
+                                else
+                                {
+                                    Message message = new Message
+                                    {
+                                        Sender_Name = $"{sender.FirstName} {sender.LastName}",
+                                        Member_ID = staff.ID,
+                                        Content = content,
+                                        IsReaded = false
+                                    };
+                                    using (var context = new AppDbContext())
+                                    {
+                                        context.messages.Add(message);
+                                        context.SaveChanges();
+                                    }
+                                }
+                            }
+                            checker = true;
+                            break;
+                        default:
+                            Console.WriteLine("Invalid choice.");
+                            Console.ReadKey();
+                            Console.Clear();
+                            break;
+                    }
+                }
+            }
+            public void SendToSpecificPerson(string content, ClubMember sender)
+            {
+                bool checker = false;
+                int choice=0;
+                if (!checker)
+                {
+                    Console.WriteLine("Choose a member to send the message to:");
+                    for (int i = 0; i < Members.Count; i++)
+                    {
+                        Console.WriteLine($"{i + 1}. {Members[i].FirstName} {Members[i].LastName}");
+                    }
+                    while (int.TryParse(Console.ReadLine(), out choice) == false || choice <= 1 || choice > Members.Count)
+                    {
+                        Console.WriteLine("Invalid choice. Please select a valid member number.");
+                    }
+                    choice -= 1;
+                    if (Members[choice]==sender)
+                    {
+                        Console.WriteLine("You cannot send message to yourself");
+                        Console.ReadKey();
+                        Console.Clear();
+                    }
+                    else
+                    {
+                        checker= true;
+                    }
+                }
+                if (Members[choice] is Staff staff)
+                {
+                    Message message = new Message
+                    {
+                        Sender_Name = $"{sender.FirstName} {sender.LastName}",
+                        Member_ID = staff.ID,
+                        Content = content,
+                        IsReaded = false
+                    };
+                    using (var context = new AppDbContext())
+                    {
+                        context.messages.Add(message);
+                        context.SaveChanges();
+                    }
+                }
+                else if (Members[choice] is Player player)
+                {
+                    Message message = new Message
+                    {
+                        Sender_Name = $"{sender.FirstName} {sender.LastName}",
+                        Member_ID = player.Number,
+                        Content = content,
+                        IsReaded = false
+                    };
+                    using (var context = new AppDbContext())
+                    {
+                        context.messages.Add(message);
+                        context.SaveChanges();
+                    }
+
+
+                }
             }
             public void SetLineup()
             {
@@ -321,20 +558,23 @@ namespace Clubs
                 public DbSet<Staff> staff { get; set; }
                 public DbSet<Goalkeeper> goalkeepers { get; set; }
                 public DbSet<Message> messages { get; set; }
+                public DbSet<LogData> logDatas { get; set; }
                 protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
                 {
-                    optionsBuilder.UseMySql("Server=localhost;Port=3306;Database=club;User=root;Password='';",
+                    optionsBuilder.UseMySql("Server=localhost;Port=3305;Database=club;User=root;Password='123';",
                         new MySqlServerVersion(new Version(11, 6, 0)));
                 }
                 protected override void OnModelCreating(ModelBuilder modelBuilder)
                 {
                     modelBuilder.Entity<Player>().HasKey(p => p.Number);
                     modelBuilder.Entity<Staff>().HasKey(s => s.ID);
+                    modelBuilder.Entity<LogData>().HasKey(l => l.Member_ID);
                     modelBuilder.Entity<Message>().HasKey(m => m.ID);
                     modelBuilder.Entity<Player>().ToTable("players");
                     modelBuilder.Entity<Staff>().ToTable("staff");
                     modelBuilder.Entity<Goalkeeper>().ToTable("goalkeepers");
                     modelBuilder.Entity<Message>().ToTable("messages");
+                    modelBuilder.Entity<LogData>().ToTable("logdatas");
                     modelBuilder.Entity<Player>().Ignore(p => p.Role);
                     modelBuilder.Entity<Player>()
            .Property(p => p.FirstName).HasColumnOrder(1);
@@ -404,10 +644,11 @@ namespace Clubs
                 public int ID { get; set; }
                 public int YearsOfExperience { get; set; }
                 public DateTime? DateOfEndTask { get; set; }
-                public Staff(Role role, string firstName, string lastName, int age, int yearsOfExperience, DateTime? dateOfEndTask) : base(firstName, lastName, age, role)
+                public Staff(Role role, string firstName, string lastName, int age, int yearsOfExperience, DateTime? dateOfEndTask,int iD) : base(firstName, lastName, age, role)
                 {
                     YearsOfExperience = yearsOfExperience;
                     DateOfEndTask = dateOfEndTask;
+                    ID = iD;
                 }
                 public void StartTask(DateTime endTime)
                 {
@@ -455,7 +696,7 @@ namespace Clubs
                         IsInjured = true;
                         Console.WriteLine($"Player {FirstName} {LastName} got injury during training");
                     }
-                    else if (injurystatus >= 1 && injurystatus <= 5)
+                    else if (injurystatus >= 1 && injurystatus <= 6)
                     {
                         Console.WriteLine($"Player {FirstName} {LastName} has improved");
                         int bonusstat = random.Next(6);
@@ -463,21 +704,75 @@ namespace Clubs
                         {
                             case 0:
                                 Pace += 1;
+                                using(var context = new AppDbContext())
+                                {
+                                    var player = context.players.Find(Number);
+                                    if (player != null)
+                                    {
+                                        player.Pace += 1;
+                                        context.SaveChanges();
+                                    }
+                                }
                                 break;
                             case 1:
                                 Shooting += 1;
+                                using(var context = new AppDbContext())
+                                {
+                                    var player = context.players.Find(Number);
+                                    if (player != null)
+                                    {
+                                        player.Shooting += 1;
+                                        context.SaveChanges();
+                                    }
+                                }
                                 break;
                             case 2:
                                 Passing += 1;
+                                using (var context = new AppDbContext())
+                                {
+                                    var player = context.players.Find(Number);
+                                    if (player != null)
+                                    {
+                                        player.Passing += 1;
+                                        context.SaveChanges();
+                                    }
+                                }
                                 break;
                             case 3:
                                 Dribling += 1;
+                                using (var context = new AppDbContext())
+                                {
+                                    var player = context.players.Find(Number);
+                                    if (player != null)
+                                    {
+                                        player.Dribling += 1;
+                                        context.SaveChanges();
+                                    }
+                                }
                                 break;
                             case 4:
                                 Defense += 1;
+                                using (var context = new AppDbContext())
+                                {
+                                    var player = context.players.Find(Number);
+                                    if (player != null)
+                                    {
+                                        player.Defense += 1;
+                                        context.SaveChanges();
+                                    }
+                                }
                                 break;
                             case 5:
                                 Physical += 1;
+                                using (var context = new AppDbContext())
+                                {
+                                    var player = context.players.Find(Number);
+                                    if (player != null)
+                                    {
+                                        player.Physical += 1;
+                                        context.SaveChanges();
+                                    }
+                                }
                                 break;
                         }
                     }
@@ -507,9 +802,18 @@ namespace Clubs
                         IsInjured = true;
                         Console.WriteLine($"Player {FirstName} {LastName} got injury during training");
                     }
-                    else if (injurystatus == 1 || injurystatus == 2)
+                    else if (injurystatus == 1)
                     {
                         GoalkeeperStats += 1;
+                        using (var context = new AppDbContext())
+                        {
+                            var player = context.goalkeepers.Find(Number);
+                            if (player != null)
+                            {
+                                player.GoalkeeperStats += 1;
+                                context.SaveChanges();
+                            }
+                        }
                         Console.WriteLine($"Player {FirstName} {LastName} has improved");
                     }
                     else
@@ -523,29 +827,75 @@ namespace Clubs
             public class Message
             {
                 public int ID { get; set; }
+                public string Sender_Name { get; set; }
                 public int Member_ID { get; set; }
                 public string Content { get; set; }
                 public bool IsReaded { get; set; }
                 public Message() { }
                 public void ReadMessage()
                 {
-                    Console.WriteLine(Content);
+                    Console.WriteLine($"{Sender_Name} : {Content}");
                     if (!IsReaded)
                     {
                         IsReaded = true;
+                        using(var context = new AppDbContext())
+                        {
+                            var message = context.messages.Find(ID);
+                            if (message != null)
+                            {
+                                message.IsReaded = true;
+                                context.SaveChanges();
+                            }
+                        }
                     }
                 }
-                public Message(int id, int member_id, string content, bool isReaded)
+                public Message(int id,string sender_name, int member_id, string content, bool isReaded)
                 {
                     ID = id;
+                    Sender_Name = sender_name;
                     Member_ID = member_id;
                     Content = content;
                     IsReaded = isReaded;
                 }
             }
+            public class LogData
+            {
+                public int Member_ID { get; set; }
+                public string Login { get; set; }
+                public string Password { get; set; }
+                public LogData() { }
+                public LogData(int member_ID, string login, string password)
+                {
+                    Member_ID = member_ID;
+                    Login = login;
+                    Password = password;
+                }
+            }
+            public static string HashPassword(string password)
+            {
+                using (var sha256 = SHA256.Create())
+                {
+                    var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+                    return Convert.ToBase64String(bytes);
+                }
+            }
             static void Main(string[] args)
             {
                 List<ClubMember> lista = new List<ClubMember>();
+                List<LogData> loglist = new List<LogData>();
+                using (var context = new AppDbContext())
+                {
+                    var logins = context.logDatas.ToList();
+                    foreach (var login in logins)
+                    {
+                        loglist.Add(new LogData
+                        {
+                            Member_ID = login.Member_ID,
+                            Login = login.Login,
+                            Password = login.Password
+                        });
+                    }
+                }
                 using (var context = new AppDbContext())
                 {
                     var players = context.players.Where(p => p.Position != Position.Goalkeeper).ToList();
@@ -578,7 +928,8 @@ namespace Clubs
                         staff.LastName,
                         staff.Age,
                         staff.YearsOfExperience,
-                        staff.DateOfEndTask));
+                        staff.DateOfEndTask,
+                        staff.ID));
                     }
                 }
                 using (var context = new AppDbContext())
@@ -612,6 +963,7 @@ namespace Clubs
                     {
                         messageslist.Add(new Message(
                                 message.ID,
+                                message.Sender_Name,
                                 message.Member_ID,
                                 message.Content,
                                 (bool)message.IsReaded
@@ -619,9 +971,34 @@ namespace Clubs
                     }
                 }
                 Club club = new Club("Dębiec FC", lista, messageslist);
-                club.MakeTeamTraining();
-                club.DisplayMembersList();
-                club.SetLineup();
+                using(var context = new AppDbContext())
+                {
+                    foreach(var member in lista)
+                    {
+                        if (member is Player player)
+                        {
+                            LogData logData = new LogData
+                            {
+                                Member_ID = player.Number,
+                                Login = $"{player.FirstName.ToLower()}.{player.LastName.ToLower()}@{player.Role}",
+                                Password = $"{HashPassword($"{player.Role}{player.Number}")}"
+                            };
+                            context.logDatas.Add(logData);
+                            context.SaveChanges();
+                        }
+                        else if (member is Staff staff)
+                        {
+                            LogData logData = new LogData
+                            {
+                                Member_ID = staff.ID,
+                                Login = $"{staff.FirstName.ToLower()}.{staff.LastName.ToLower()}@{staff.Role}",
+                                Password = $"{HashPassword($"{staff.Role}{staff.ID}")}"
+                            };
+                            context.logDatas.Add(logData);
+                            context.SaveChanges();
+                        }
+                    }
+                }
             }
         }
     }
