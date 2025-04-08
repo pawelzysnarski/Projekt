@@ -33,18 +33,90 @@ INSERT INTO `goalkeepers` (`Number`, `GoalkeeperStats`) VALUES
 	(41, 71),
 	(98, 72);
 
+-- Zrzut struktury tabela club.logdatas
+CREATE TABLE IF NOT EXISTS `logdatas` (
+  `Member_ID` int(11) NOT NULL,
+  `Login` varchar(50) DEFAULT NULL,
+  `Password` varchar(100) DEFAULT NULL,
+  PRIMARY KEY (`Member_ID`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- Zrzucanie danych dla tabeli club.logdatas: ~34 rows (około)
+INSERT INTO `logdatas` (`Member_ID`, `Login`, `Password`) VALUES
+	(1, 'arek.goat@Player', 'TDSKhnYbj/u9RMvoEKsyC254X6Lmn98eJWLLS7k5VZA='),
+	(2, 'ben.me@Player', 'Wg9vBKSOiAua1srSmxfHNh5vmonZJVvwNzZYUElcGWI='),
+	(4, 'jaja.ture@Player', 'dOwmMvE1LGGkWm0E/679nfZ3rMZtaTDwcXzfDEzPwSs='),
+	(6, 'virgil.van aura@Player', 'TLMgc7V2lVeBnOGC+X6fgUm/waQ+uFW+E5Iqi5FpxZ4='),
+	(7, 'cristopher.penaldo@Player', 'KIq6DOQvJmqdJAnyI540HnStINpfay6Rmm3JXn/Y5ZE='),
+	(8, 'jacob.kavior@Player', 'eDXZBJ9HkKWX92DTzCCNqDsYw7BVOfv/a1h5cqpiqIU='),
+	(9, 'robert.lewangoalski@Player', 'BSTxlDqBewsC+juxdOmuO6FyVtJVvW4LD5U1z1pf34A='),
+	(10, 'lionel.pessi@Player', '4n2uLC6p1MCX7i7Y0mUm2mbyrPVHmMlIXyczHW/LaOg='),
+	(13, 'eduardo.comavinga@Player', 'LT4GhVVfDU0+rlllJ+meorNusOFpLovKDv4DFTzvplY='),
+	(14, 'nicolo.nutella@Player', 'SjGb1s2bblEZhbFvr8SyGGMX6QvxUhGcbZi2gpLynU0='),
+	(15, 'karim.po15zema@Player', 'A4kDLP+JeAZHh4hcSbGNF+1BV++KppZZpGguDU4A90o='),
+	(16, 'jude.tappingham@Player', 'JKY/eNrCR2mUdnnR0NtsBIUUwlM6ehJTjgc692wbFeg='),
+	(17, 'wojciech.tek@Player', 'DUKTRTfJK+cOHJT3/StHNt6GSNENgU15i0nx7EqyLQA='),
+	(19, 'kilian.mfloppe@Player', '4GtTjSw522kjzzlCqjAf/m27lA+Xl+mzVGD/5ZJATiI='),
+	(20, 'eden.burger@Player', '+vojy0tGgW91TYXSK1dtHT1TyFIGPIM/K9e3mmJtqXU='),
+	(23, 'neco.williams@Player', '1Aei5LI6EspC1Plm4VSfD8RCpiKqSeCRZ9MODU5Qn+M='),
+	(25, 'lamine.jamal@Player', 'MjuB46c5iG1kdvPc/maQXvDR9vdJAbljGX3TNBT2ntQ='),
+	(27, 'jan.betoniarek@Player', 'Lmxa1qRtv1VStsW0NsUVYiocIXMRcsUh5iNgoGnuCBQ='),
+	(41, 'thibaut.giraffe@Player', 'qz6K3cBZbrT6LcWPbdMysnBll78Y0RjEpYqrdruYq2M='),
+	(42, 'christian.heartrikser@Player', 'MNYWqcAoYu8xbC5m+8Ax2EFafWLsjpy59RGaES56PXg='),
+	(50, 'hueng-min.trophyless@Player', 'h+2wbnOYVuQQhU/IYDTf7w87Fw/FGsCunRPslmEmtPA='),
+	(65, 'mason.zielony-drewno@Player', 'qqqSZw8LEsXftC4DSjPKpj/boNeIkMXIc/dZUGT1soA='),
+	(69, 'mister.aura@Player', 'NyPbIdeVgHwj5T60lJg+P80YlEme2+yJnJQ4gEhZpqA='),
+	(70, 'kai.havertz@Player', '1z0h2svHiM1t/d43bVBa2ESHqyB38RSRtot9U8qSwAw='),
+	(78, 'sergio.burger@Player', '61Nxe2S38Skwx2om84OAWfA9VJsX9L+Fl3k5Pj4tQVg='),
+	(89, 'vincent.kompielowy@Player', 'MJNXJVUCo/Ph9cGQ01VJdN502Qv2GQPEcAQ5KaAkjSQ='),
+	(92, 'marcos.estrella@Player', '4YdV7RX/Lmi/X4NRZv9vWQFIuv+ebAO0E8axd2HTAdY='),
+	(98, 'ramzes.becker@Player', 'fCBmui+DB4ApCl2MxxrWUQ7Qngz+jstTmaSW6R0sdSg='),
+	(101, 'jan.kowalski@Boss', '5yy68dsU5Rzk1wyO+Km8Y5NDJS54uBshiSwkYZekQWM='),
+	(102, 'michał.prodiż@Coach', 'NYN4pZwR/dMzuJs3/xffFiY9bJP2C5kYmzrbk6c+eSI='),
+	(103, 'antoine.dedeme@Medic', 'mJDrPpfgxjY8DLeVYz8wKzJt6lGNui/tNVdlcKneZyM='),
+	(104, 'carlo.viniary@Medic', 'l6Pr6JXOZxfoMAbDmTuJ5T2SBF3AGg3o/TNWTUkuacA='),
+	(105, 'stefan.zagajnik@Scout', 'nfEON9LPMuEJ4kTYGTd0bGuOk9KKG86RRaN0ZIxpz14='),
+	(106, 'antonio.conti@Scout', 'INlJ7YeOBJp1syEmXp2LObzscQ3uXfo+nzXIO5lARMk=');
+
 -- Zrzut struktury tabela club.messages
 CREATE TABLE IF NOT EXISTS `messages` (
   `ID` int(11) NOT NULL AUTO_INCREMENT,
+  `Sender_Name` varchar(50) DEFAULT NULL,
   `Member_ID` int(11) DEFAULT NULL,
-  `Content` varchar(50) DEFAULT NULL,
+  `Content` varchar(1000) DEFAULT NULL,
   `IsReaded` tinyint(4) DEFAULT 0,
   PRIMARY KEY (`ID`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
--- Zrzucanie danych dla tabeli club.messages: ~1 rows (około)
-INSERT INTO `messages` (`ID`, `Member_ID`, `Content`, `IsReaded`) VALUES
-	(1, 104, 'Srały muchy bedzie wiosna', 0);
+-- Zrzucanie danych dla tabeli club.messages: ~27 rows (około)
+INSERT INTO `messages` (`ID`, `Sender_Name`, `Member_ID`, `Content`, `IsReaded`) VALUES
+	(1, 'Arek Goat', 2, 'Goat Goat Goat', 1),
+	(2, 'Arek Goat', 4, 'Goat Goat Goat', 0),
+	(3, 'Arek Goat', 6, 'Goat Goat Goat', 0),
+	(4, 'Arek Goat', 7, 'Goat Goat Goat', 0),
+	(5, 'Arek Goat', 8, 'Goat Goat Goat', 0),
+	(6, 'Arek Goat', 9, 'Goat Goat Goat', 0),
+	(7, 'Arek Goat', 10, 'Goat Goat Goat', 0),
+	(8, 'Arek Goat', 13, 'Goat Goat Goat', 0),
+	(9, 'Arek Goat', 14, 'Goat Goat Goat', 0),
+	(10, 'Arek Goat', 15, 'Goat Goat Goat', 0),
+	(11, 'Arek Goat', 16, 'Goat Goat Goat', 0),
+	(12, 'Arek Goat', 19, 'Goat Goat Goat', 0),
+	(13, 'Arek Goat', 20, 'Goat Goat Goat', 0),
+	(14, 'Arek Goat', 23, 'Goat Goat Goat', 0),
+	(15, 'Arek Goat', 25, 'Goat Goat Goat', 0),
+	(16, 'Arek Goat', 27, 'Goat Goat Goat', 0),
+	(17, 'Arek Goat', 42, 'Goat Goat Goat', 0),
+	(18, 'Arek Goat', 50, 'Goat Goat Goat', 0),
+	(19, 'Arek Goat', 65, 'Goat Goat Goat', 0),
+	(20, 'Arek Goat', 69, 'Goat Goat Goat', 0),
+	(21, 'Arek Goat', 70, 'Goat Goat Goat', 0),
+	(22, 'Arek Goat', 78, 'Goat Goat Goat', 0),
+	(23, 'Arek Goat', 89, 'Goat Goat Goat', 0),
+	(24, 'Arek Goat', 92, 'Goat Goat Goat', 0),
+	(25, 'Arek Goat', 17, 'Goat Goat Goat', 0),
+	(26, 'Arek Goat', 41, 'Goat Goat Goat', 0),
+	(27, 'Arek Goat', 98, 'Goat Goat Goat', 0);
 
 -- Zrzut struktury tabela club.players
 CREATE TABLE IF NOT EXISTS `players` (
