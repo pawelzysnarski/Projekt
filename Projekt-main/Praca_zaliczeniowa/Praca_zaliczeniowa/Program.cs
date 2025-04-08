@@ -41,7 +41,7 @@ namespace Clubs
             public string Name { get; set; }
             public List<ClubMember> Members { get; set; }
             public Dictionary<Position, ClubMember> Lineup { get; set; }
-            public Action<string,ClubMember> MessageSender { get; set; }
+            public Action<string, ClubMember> MessageSender { get; set; }
             public readonly Dictionary<Role, List<string>> Permissions = new Dictionary<Role, List<string>>
             {
                 { Role.Coach,new List<string>{"Make lineup","Make team training session","Chat" } },
@@ -68,25 +68,25 @@ namespace Clubs
             }
             public void MyMessages(ClubMember clubMember)
             {
-                    Console.WriteLine("Your messages:");
-                    foreach (var message in Messages)
+                Console.WriteLine("Your messages:");
+                foreach (var message in Messages)
+                {
+                    if (clubMember is Staff staff)
                     {
-                        if (clubMember is Staff staff)
+                        if (message.Member_ID == staff.ID)
                         {
-                            if (message.Member_ID == staff.ID)
-                            {
-                                message.ReadMessage();
-                            }
-                        }
-                        else if (clubMember is Player player)
-                        {
-                            if(message.Member_ID == player.Number)
-                            {
-                                message.ReadMessage();
-                            }
-                            
+                            message.ReadMessage();
                         }
                     }
+                    else if (clubMember is Player player)
+                    {
+                        if (message.Member_ID == player.Number)
+                        {
+                            message.ReadMessage();
+                        }
+
+                    }
+                }
             }
             public void SendMessage(ClubMember clubMember)
             {
@@ -98,7 +98,7 @@ namespace Clubs
                     content = Console.ReadLine();
                 }
                 Console.Clear();
-                bool checker=false;
+                bool checker = false;
                 while (!checker)
                 {
                     Console.WriteLine("Choose a type of receiver: ");
@@ -126,7 +126,7 @@ namespace Clubs
                     }
                 }
             }
-            public void SendToAll(string content,ClubMember sender)
+            public void SendToAll(string content, ClubMember sender)
             {
                 foreach (var clubMember in Members)
                 {
@@ -138,34 +138,34 @@ namespace Clubs
                     {
                         if (clubMember is Staff staff)
                         {
-                                Message message = new Message
-                                {
-                                    Sender_Name = $"{sender.FirstName} {sender.LastName}",
-                                    Member_ID = staff.ID,
-                                    Content = content,
-                                    IsReaded = false
-                                };
-                                using (var context = new AppDbContext())
-                                {
-                                    context.messages.Add(message);
-                                    context.SaveChanges();
-                                }
+                            Message message = new Message
+                            {
+                                Sender_Name = $"{sender.FirstName} {sender.LastName}",
+                                Member_ID = staff.ID,
+                                Content = content,
+                                IsReaded = false
+                            };
+                            using (var context = new AppDbContext())
+                            {
+                                context.messages.Add(message);
+                                context.SaveChanges();
+                            }
                         }
                         else if (clubMember is Player player)
                         {
-                                Message message = new Message
-                                {
-                                    Sender_Name = $"{sender.FirstName} {sender.LastName}",
-                                    Member_ID = player.Number,
-                                    Content = content,
-                                    IsReaded = false
-                                };
-                                using (var context = new AppDbContext())
-                                {
-                                    context.messages.Add(message);
-                                    context.SaveChanges();
-                                }
-                            
+                            Message message = new Message
+                            {
+                                Sender_Name = $"{sender.FirstName} {sender.LastName}",
+                                Member_ID = player.Number,
+                                Content = content,
+                                IsReaded = false
+                            };
+                            using (var context = new AppDbContext())
+                            {
+                                context.messages.Add(message);
+                                context.SaveChanges();
+                            }
+
 
                         }
                     }
@@ -243,7 +243,7 @@ namespace Clubs
             public void SendToSpecificPerson(string content, ClubMember sender)
             {
                 bool checker = false;
-                int choice=0;
+                int choice = 0;
                 if (!checker)
                 {
                     Console.WriteLine("Choose a member to send the message to:");
@@ -256,7 +256,7 @@ namespace Clubs
                         Console.WriteLine("Invalid choice. Please select a valid member number.");
                     }
                     choice -= 1;
-                    if (Members[choice]==sender)
+                    if (Members[choice] == sender)
                     {
                         Console.WriteLine("You cannot send message to yourself");
                         Console.ReadKey();
@@ -264,7 +264,7 @@ namespace Clubs
                     }
                     else
                     {
-                        checker= true;
+                        checker = true;
                     }
                 }
                 if (Members[choice] is Staff staff)
@@ -561,7 +561,7 @@ namespace Clubs
                 public DbSet<LogData> logDatas { get; set; }
                 protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
                 {
-                    optionsBuilder.UseMySql("Server=localhost;Port=3305;Database=club;User=root;Password='123';",
+                    optionsBuilder.UseMySql("Server=localhost;Port=3306;Database=club;User=root;Password='';",
                         new MySqlServerVersion(new Version(11, 6, 0)));
                 }
                 protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -644,7 +644,7 @@ namespace Clubs
                 public int ID { get; set; }
                 public int YearsOfExperience { get; set; }
                 public DateTime? DateOfEndTask { get; set; }
-                public Staff(Role role, string firstName, string lastName, int age, int yearsOfExperience, DateTime? dateOfEndTask,int iD) : base(firstName, lastName, age, role)
+                public Staff(Role role, string firstName, string lastName, int age, int yearsOfExperience, DateTime? dateOfEndTask, int iD) : base(firstName, lastName, age, role)
                 {
                     YearsOfExperience = yearsOfExperience;
                     DateOfEndTask = dateOfEndTask;
@@ -704,7 +704,7 @@ namespace Clubs
                         {
                             case 0:
                                 Pace += 1;
-                                using(var context = new AppDbContext())
+                                using (var context = new AppDbContext())
                                 {
                                     var player = context.players.Find(Number);
                                     if (player != null)
@@ -716,7 +716,7 @@ namespace Clubs
                                 break;
                             case 1:
                                 Shooting += 1;
-                                using(var context = new AppDbContext())
+                                using (var context = new AppDbContext())
                                 {
                                     var player = context.players.Find(Number);
                                     if (player != null)
@@ -838,7 +838,7 @@ namespace Clubs
                     if (!IsReaded)
                     {
                         IsReaded = true;
-                        using(var context = new AppDbContext())
+                        using (var context = new AppDbContext())
                         {
                             var message = context.messages.Find(ID);
                             if (message != null)
@@ -849,7 +849,7 @@ namespace Clubs
                         }
                     }
                 }
-                public Message(int id,string sender_name, int member_id, string content, bool isReaded)
+                public Message(int id, string sender_name, int member_id, string content, bool isReaded)
                 {
                     ID = id;
                     Sender_Name = sender_name;
@@ -871,6 +871,32 @@ namespace Clubs
                     Password = password;
                 }
             }
+            public void Login()
+            {
+                Console.WriteLine("Insert email: ");
+                string email = Console.ReadLine();
+                Console.WriteLine("Insert password: ");
+                string password = Console.ReadLine();
+
+                // Hash the password to compare with stored hashed passwords
+                string hashedPassword = HashPassword(password);
+
+                using (var context = new AppDbContext())
+                {
+                    // Find the user by email
+                    var logData = context.logDatas.FirstOrDefault(ld => ld.Login == email);
+
+                    if (logData != null && logData.Password == hashedPassword)
+                    {
+                        Console.WriteLine($"Welcome, {email}! You have successfully logged in.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid login credentials. Please try again.");
+                    }
+                }
+            }
+
             public static string HashPassword(string password)
             {
                 using (var sha256 = SHA256.Create())
@@ -879,6 +905,7 @@ namespace Clubs
                     return Convert.ToBase64String(bytes);
                 }
             }
+
             static void Main(string[] args)
             {
                 List<ClubMember> lista = new List<ClubMember>();
@@ -971,35 +998,8 @@ namespace Clubs
                     }
                 }
                 Club club = new Club("Dębiec FC", lista, messageslist);
-                using(var context = new AppDbContext())
-                {
-                    foreach(var member in lista)
-                    {
-                        if (member is Player player)
-                        {
-                            LogData logData = new LogData
-                            {
-                                Member_ID = player.Number,
-                                Login = $"{player.FirstName.ToLower()}.{player.LastName.ToLower()}@{player.Role}",
-                                Password = $"{HashPassword($"{player.Role}{player.Number}")}"
-                            };
-                            context.logDatas.Add(logData);
-                            context.SaveChanges();
-                        }
-                        else if (member is Staff staff)
-                        {
-                            LogData logData = new LogData
-                            {
-                                Member_ID = staff.ID,
-                                Login = $"{staff.FirstName.ToLower()}.{staff.LastName.ToLower()}@{staff.Role}",
-                                Password = $"{HashPassword($"{staff.Role}{staff.ID}")}"
-                            };
-                            context.logDatas.Add(logData);
-                            context.SaveChanges();
+                club.Login();
                         }
                     }
                 }
-            }
-        }
-    }
 }
