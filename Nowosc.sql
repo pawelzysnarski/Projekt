@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
 -- Host:                         127.0.0.1
--- Wersja serwera:               11.6.2-MariaDB - mariadb.org binary distribution
+-- Wersja serwera:               11.7.2-MariaDB - mariadb.org binary distribution
 -- Serwer OS:                    Win64
--- HeidiSQL Wersja:              12.8.0.6908
+-- HeidiSQL Wersja:              12.10.0.7000
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -187,6 +187,17 @@ INSERT INTO `staff` (`FirstName`, `LastName`, `Age`, `Role`, `YearsOfExperience`
 	('Carlo', 'Viniary', 45, 'Medic', 20, NULL, 104),
 	('Stefan', 'Zagajnik', 25, 'Scout', 2, NULL, 105),
 	('Antonio', 'Conti', 48, 'Scout', 23, NULL, 106);
+
+-- Zrzut struktury tabela club.tasks
+CREATE TABLE IF NOT EXISTS `tasks` (
+  `Member_ID` int(11) NOT NULL,
+  `Task_End_date` datetime NOT NULL,
+  `TaskType` enum('Healing','Scouting') NOT NULL,
+  `Player_Number` int(11) DEFAULT NULL,
+  PRIMARY KEY (`Member_ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- Zrzucanie danych dla tabeli club.tasks: ~0 rows (około)
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
