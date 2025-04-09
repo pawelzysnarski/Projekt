@@ -45,11 +45,11 @@ namespace Clubs
             public Action<string, ClubMember> MessageSender { get; set; }
             public readonly Dictionary<Role, List<string>> Permissions = new Dictionary<Role, List<string>>
             {
-                { Role.Coach,new List<string>{"Make lineup","Make team training session","Chat" } },
-                { Role.Medic, new List<string>{"Treat player","Check injury status"} },
-                { Role.Boss, new List<string>{"Make important decisions","Sack staff","Hire staff"} },
-                { Role.Scout, new List<string>{"Scout player","Report on players"} },
-                { Role.Player, new List<string>{"Play in matches","Train"} }
+                { Role.Coach,new List<string>{"Make lineup","See lineup","Make team training session","Chat" } },
+                { Role.Medic, new List<string>{"Heal player","Chat"} },
+                { Role.Boss, new List<string>{"See lineup","Sack staff","Hire staff"} },
+                { Role.Scout, new List<string>{"Scout player","Chat"} },
+                { Role.Player, new List<string>{"Chat","See lineup","Train"} }
 
             };
             public bool HasThatPermission(ClubMember clubmember, string permission)
@@ -75,6 +75,37 @@ namespace Clubs
                     task.TaskInfo();
                 }
             }
+            public void EndTask(Staff staff)
+            {
+                foreach (var task in Tasks.Where(t => t.Member_ID == staff.ID))
+                {
+                    if (task.Task_End_Date < DateTime.Now)
+                    {
+                        Console.WriteLine("Task ended");
+                        Tasks.Remove(task);
+                        using (var context = new AppDbContext())
+                        {
+                            var taskToRemove = context.tasks.Find(task.Member_ID);
+                            if (taskToRemove != null)
+                            {
+                                context.tasks.Remove(taskToRemove);
+                                context.SaveChanges();
+                            }
+                        }
+                    }
+                }
+            }
+            public void SeeLineup()
+            {
+                Console.WriteLine("Lineup:");
+                int i = 1;
+                foreach (var player in Lineup)
+                {
+                    Console.WriteLine($"{i}. {player.Key}: {player.Value.FirstName} {player.Value.LastName}");
+                    i++;
+                }
+            }
+
             public void MyMessages(ClubMember clubMember)
             {
                 Console.WriteLine("Your messages:");
@@ -474,7 +505,38 @@ namespace Clubs
             }
             public void SackClubMember(ClubMember clubMember)
             {
-                Members.Remove(clubMember);
+                if (!Members.Contains(clubMember))
+                {
+                    Console.WriteLine($"{clubMember.FirstName} {clubMember.LastName} is not a member of the club.");
+                    return;
+                }
+                else
+                {
+                    if (clubMember is Player player)
+                    {
+                        using (var context = new AppDbContext())
+                        {
+                            var playerToRemove = context.players.Find(player.Number);
+                            if (playerToRemove != null)
+                            {
+                                context.players.Remove(playerToRemove);
+                                context.SaveChanges();
+                            }
+                        }
+                    }
+                    else if (clubMember is Staff staff)
+                    {
+                        using (var context = new AppDbContext())
+                        {
+                            var staffToRemove = context.staff.Find(staff.ID);
+                            if (staffToRemove != null)
+                            {
+                                context.staff.Remove(staffToRemove);
+                                context.SaveChanges();
+                            }
+                        }
+                    }
+                }
                 Console.WriteLine($"{clubMember.FirstName} {clubMember.LastName} sacked from the club.");
             }
             public void MakeTeamTraining()
@@ -572,8 +634,8 @@ namespace Clubs
             public DbSet<Task> tasks { get; set; }
             protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             {
-                optionsBuilder.UseMySql("Server=localhost;Port=3306;Database=club;User=root;Password='zsk';",
-                    new MySqlServerVersion(new Version(11, 5, 0)));
+                optionsBuilder.UseMySql("Server=localhost;Port=3305;Database=club;User=root;Password='123';",
+                    new MySqlServerVersion(new Version(11, 6, 0)));
             }
             protected override void OnModelCreating(ModelBuilder modelBuilder)
             {
@@ -1072,4 +1134,3 @@ namespace Clubs
         }
     }
 }
-
