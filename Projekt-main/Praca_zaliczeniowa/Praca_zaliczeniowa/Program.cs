@@ -38,6 +38,7 @@ namespace Clubs
         public class Club
         {
             public List<Message> Messages { get; set; }
+            public List<Task> Tasks { get; set; }
             public string Name { get; set; }
             public List<ClubMember> Members { get; set; }
             public Dictionary<Position, ClubMember> Lineup { get; set; }
@@ -60,11 +61,19 @@ namespace Clubs
                 return false;
             }
 
-            public Club(string name, List<ClubMember> members, List<Message> messages)
+            public Club(string name, List<ClubMember> members, List<Message> messages, List<Task> tasks)
             {
                 Name = name;
                 Members = members;
                 Messages = messages;
+                Tasks = tasks;
+            }
+            public void MyTasks(Staff staff)
+            {
+                foreach (var task in Tasks.Where(t => t.Member_ID == staff.ID))
+                {
+                    task.TaskInfo();
+                }
             }
             public void MyMessages(ClubMember clubMember)
             {
@@ -300,7 +309,7 @@ namespace Clubs
 
                 }
             }
-            public void SetLineup()
+            /*public void SetLineup()
             {
                 Console.WriteLine("Enter the formation (e.g., 4-4-2, 4-3-3, etc.):");
                 string formation = Console.ReadLine();
@@ -457,7 +466,7 @@ namespace Clubs
                         Console.WriteLine($"{group.Key}: {group.First().Value.FirstName} {group.First().Value.LastName}");
                     }
                 }
-            }
+            }*/
             public void HireClubMember(ClubMember clubMember)
             {
                 Members.Add(clubMember);
@@ -552,454 +561,515 @@ namespace Clubs
 
                 Console.WriteLine("-------------------------------------------------------------");
             }
-            public class AppDbContext : DbContext
+        }
+        public class AppDbContext : DbContext
+        {
+            public DbSet<Player> players { get; set; }
+            public DbSet<Staff> staff { get; set; }
+            public DbSet<Goalkeeper> goalkeepers { get; set; }
+            public DbSet<Message> messages { get; set; }
+            public DbSet<LogData> logDatas { get; set; }
+            public DbSet<Task> tasks { get; set; }
+            protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             {
-                public DbSet<Player> players { get; set; }
-                public DbSet<Staff> staff { get; set; }
-                public DbSet<Goalkeeper> goalkeepers { get; set; }
-                public DbSet<Message> messages { get; set; }
-                public DbSet<LogData> logDatas { get; set; }
-                protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-                {
-                    optionsBuilder.UseMySql("Server=localhost;Port=3306;Database=club;User=root;Password='';",
-                        new MySqlServerVersion(new Version(11, 6, 0)));
-                }
-                protected override void OnModelCreating(ModelBuilder modelBuilder)
-                {
-                    modelBuilder.Entity<Player>().HasKey(p => p.Number);
-                    modelBuilder.Entity<Staff>().HasKey(s => s.ID);
-                    modelBuilder.Entity<LogData>().HasKey(l => l.Member_ID);
-                    modelBuilder.Entity<Message>().HasKey(m => m.ID);
-                    modelBuilder.Entity<Player>().ToTable("players");
-                    modelBuilder.Entity<Staff>().ToTable("staff");
-                    modelBuilder.Entity<Goalkeeper>().ToTable("goalkeepers");
-                    modelBuilder.Entity<Message>().ToTable("messages");
-                    modelBuilder.Entity<LogData>().ToTable("logdatas");
-                    modelBuilder.Entity<Player>().Ignore(p => p.Role);
-                    modelBuilder.Entity<Player>()
-           .Property(p => p.FirstName).HasColumnOrder(1);
-
-                    modelBuilder.Entity<Player>()
-                        .Property(p => p.LastName).HasColumnOrder(2);
-
-                    modelBuilder.Entity<Player>()
-                        .Property(p => p.Position).HasColumnOrder(3);
-
-                    modelBuilder.Entity<Player>()
-                        .Property(p => p.Pace).HasColumnOrder(4);
-
-                    modelBuilder.Entity<Player>()
-                        .Property(p => p.Shooting).HasColumnOrder(5);
-
-                    modelBuilder.Entity<Player>()
-                        .Property(p => p.Passing).HasColumnOrder(6);
-
-                    modelBuilder.Entity<Player>()
-                        .Property(p => p.Dribling).HasColumnOrder(7);
-
-                    modelBuilder.Entity<Player>()
-                        .Property(p => p.Defense).HasColumnOrder(8);
-
-                    modelBuilder.Entity<Player>()
-                        .Property(p => p.Physical).HasColumnOrder(9);
-
-                    modelBuilder.Entity<Player>()
-                        .Property(p => p.Number).HasColumnOrder(10);
-
-                    modelBuilder.Entity<Player>()
-                        .Property(p => p.IsInjured).HasColumnOrder(11);
-
-                    modelBuilder.Entity<Player>()
-                        .Property(p => p.Age).HasColumnOrder(12);
-                    modelBuilder.Entity<Player>()
-                        .Property(p => p.Position)
-                        .HasConversion(
-                            v => v.ToString(),
-                            v => (Position)Enum.Parse(typeof(Position), v)
-                        );
-                    modelBuilder.Entity<Staff>()
-            .Property(c => c.Role)
-            .HasConversion(
-                v => v.ToString(),
-                v => (Role)Enum.Parse(typeof(Role), v)
-            );
-                }
+                optionsBuilder.UseMySql("Server=localhost;Port=3306;Database=club;User=root;Password='zsk';",
+                    new MySqlServerVersion(new Version(11, 5, 0)));
             }
-            public class ClubMember
+            protected override void OnModelCreating(ModelBuilder modelBuilder)
             {
-                public string FirstName { get; set; }
-                public string LastName { get; set; }
-                public int Age { get; set; }
-                public Role Role { get; set; }
-                public ClubMember(string firstName, string lastName, int age, Role role)
-                {
-                    FirstName = firstName;
-                    LastName = lastName;
-                    Age = age;
-                    Role = role;
-                }
-            }
-            public class Staff : ClubMember
-            {
-                public int ID { get; set; }
-                public int YearsOfExperience { get; set; }
-                public DateTime? DateOfEndTask { get; set; }
-                public Staff(Role role, string firstName, string lastName, int age, int yearsOfExperience, DateTime? dateOfEndTask, int iD) : base(firstName, lastName, age, role)
-                {
-                    YearsOfExperience = yearsOfExperience;
-                    DateOfEndTask = dateOfEndTask;
-                    ID = iD;
-                }
-                public void StartTask(DateTime endTime)
-                {
-                    if (endTime != null)
-                    {
-                        DateOfEndTask = endTime;
-                        Console.WriteLine($"{LastName} starts task. It will exired at {endTime.ToLongDateString()}");
-                    }
-                }
-            }
+                modelBuilder.Entity<Player>().HasKey(p => p.Number);
+                modelBuilder.Entity<Staff>().HasKey(s => s.ID);
+                modelBuilder.Entity<LogData>().HasKey(l => l.Member_ID);
+                modelBuilder.Entity<Task>().HasKey(t => t.Member_ID);
+                modelBuilder.Entity<Message>().HasKey(m => m.ID);
+                modelBuilder.Entity<Player>().ToTable("players");
+                modelBuilder.Entity<Staff>().ToTable("staff");
+                modelBuilder.Entity<Goalkeeper>().ToTable("goalkeepers");
+                modelBuilder.Entity<Message>().ToTable("messages");
+                modelBuilder.Entity<LogData>().ToTable("logdatas");
+                modelBuilder.Entity<Task>().ToTable("tasks");
+                modelBuilder.Entity<Player>().Ignore(p => p.Role);
+                modelBuilder.Entity<Player>()
+       .Property(p => p.FirstName).HasColumnOrder(1);
 
-            public class Player : ClubMember
+                modelBuilder.Entity<Player>()
+                    .Property(p => p.LastName).HasColumnOrder(2);
+
+                modelBuilder.Entity<Player>()
+                    .Property(p => p.Position).HasColumnOrder(3);
+
+                modelBuilder.Entity<Player>()
+                    .Property(p => p.Pace).HasColumnOrder(4);
+
+                modelBuilder.Entity<Player>()
+                    .Property(p => p.Shooting).HasColumnOrder(5);
+
+                modelBuilder.Entity<Player>()
+                    .Property(p => p.Passing).HasColumnOrder(6);
+
+                modelBuilder.Entity<Player>()
+                    .Property(p => p.Dribling).HasColumnOrder(7);
+
+                modelBuilder.Entity<Player>()
+                    .Property(p => p.Defense).HasColumnOrder(8);
+
+                modelBuilder.Entity<Player>()
+                    .Property(p => p.Physical).HasColumnOrder(9);
+
+                modelBuilder.Entity<Player>()
+                    .Property(p => p.Number).HasColumnOrder(10);
+
+                modelBuilder.Entity<Player>()
+                    .Property(p => p.IsInjured).HasColumnOrder(11);
+
+                modelBuilder.Entity<Player>()
+                    .Property(p => p.Age).HasColumnOrder(12);
+                modelBuilder.Entity<Player>()
+                    .Property(p => p.Position)
+                    .HasConversion(
+                        v => v.ToString(),
+                        v => (Position)Enum.Parse(typeof(Position), v)
+                    );
+                modelBuilder.Entity<Staff>()
+        .Property(c => c.Role)
+        .HasConversion(
+            v => v.ToString(),
+            v => (Role)Enum.Parse(typeof(Role), v)
+        );
+            }
+        }
+        public class ClubMember
+        {
+            public string FirstName { get; set; }
+            public string LastName { get; set; }
+            public int Age { get; set; }
+            public Role Role { get; set; }
+            public ClubMember(string firstName, string lastName, int age, Role role)
             {
-                public Position Position { get; set; }
-                public int Pace { get; set; }
-                public int Shooting { get; set; }
-                public int Passing { get; set; }
-                public int Dribling { get; set; }
-                public int Defense { get; set; }
-                public int Physical { get; set; }
-                public bool IsInjured { get; set; }
-                public int Number { get; set; }
-                public Player(int number, Position position, int pace, int shooting, int passing, int dribling, int defense, int physical, bool isInjured, string firstName, string lastName, int age) : base(firstName, lastName, age, Role.Player)
+                FirstName = firstName;
+                LastName = lastName;
+                Age = age;
+                Role = role;
+            }
+        }
+        public class Staff : ClubMember
+        {
+            public int ID { get; set; }
+            public int YearsOfExperience { get; set; }
+            public DateTime? DateOfEndTask { get; set; }
+            public Staff(Role role, string firstName, string lastName, int age, int yearsOfExperience, DateTime? dateOfEndTask, int iD) : base(firstName, lastName, age, role)
+            {
+                YearsOfExperience = yearsOfExperience;
+                DateOfEndTask = dateOfEndTask;
+                ID = iD;
+            }
+            public void StartTask(DateTime endTime, Player player)
+            {
+                if (endTime != null)
                 {
-                    Position = position;
-                    Pace = pace;
-                    Shooting = shooting;
-                    Passing = passing;
-                    Dribling = dribling;
-                    Defense = defense;
-                    Physical = physical;
-                    IsInjured = isInjured;
-                    Number = number;
-                }
-                public virtual int OverallStats()
-                {
-                    return (int)Math.Round((double)(Pace + Shooting + Passing + Dribling + Defense + Physical) / 6);
-                }
-                public virtual void Train()
-                {
-                    Random random = new Random();
-                    int injurystatus = random.Next(200);
-                    if (injurystatus == 0)
+                    DateOfEndTask = endTime;
+                    Console.WriteLine($"{LastName} starts task. It will exired at {endTime.ToLongDateString()}");
+                    using (var context = new AppDbContext())
                     {
-                        IsInjured = true;
-                        Console.WriteLine($"Player {FirstName} {LastName} got injury during training");
-                    }
-                    else if (injurystatus >= 1 && injurystatus <= 6)
-                    {
-                        Console.WriteLine($"Player {FirstName} {LastName} has improved");
-                        int bonusstat = random.Next(6);
-                        switch (bonusstat)
+                        var now = DateTime.Now;
+                        now.AddHours(36);
+                        string type;
+                        if (Role == Role.Medic)
                         {
-                            case 0:
-                                Pace += 1;
-                                using (var context = new AppDbContext())
-                                {
-                                    var player = context.players.Find(Number);
-                                    if (player != null)
-                                    {
-                                        player.Pace += 1;
-                                        context.SaveChanges();
-                                    }
-                                }
-                                break;
-                            case 1:
-                                Shooting += 1;
-                                using (var context = new AppDbContext())
-                                {
-                                    var player = context.players.Find(Number);
-                                    if (player != null)
-                                    {
-                                        player.Shooting += 1;
-                                        context.SaveChanges();
-                                    }
-                                }
-                                break;
-                            case 2:
-                                Passing += 1;
-                                using (var context = new AppDbContext())
-                                {
-                                    var player = context.players.Find(Number);
-                                    if (player != null)
-                                    {
-                                        player.Passing += 1;
-                                        context.SaveChanges();
-                                    }
-                                }
-                                break;
-                            case 3:
-                                Dribling += 1;
-                                using (var context = new AppDbContext())
-                                {
-                                    var player = context.players.Find(Number);
-                                    if (player != null)
-                                    {
-                                        player.Dribling += 1;
-                                        context.SaveChanges();
-                                    }
-                                }
-                                break;
-                            case 4:
-                                Defense += 1;
-                                using (var context = new AppDbContext())
-                                {
-                                    var player = context.players.Find(Number);
-                                    if (player != null)
-                                    {
-                                        player.Defense += 1;
-                                        context.SaveChanges();
-                                    }
-                                }
-                                break;
-                            case 5:
-                                Physical += 1;
-                                using (var context = new AppDbContext())
-                                {
-                                    var player = context.players.Find(Number);
-                                    if (player != null)
-                                    {
-                                        player.Physical += 1;
-                                        context.SaveChanges();
-                                    }
-                                }
-                                break;
+                            type = "Healing";
                         }
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Player {FirstName} {LastName} trained");
+                        else
+                        {
+                            type = "Scouting";
+                        }
+                        context.tasks.Add(new Task(ID, now, type, player.Number));
+                        context.SaveChanges();
                     }
                 }
             }
-            public class Goalkeeper : Player
+        }
+
+        public class Player : ClubMember
+        {
+            public Position Position { get; set; }
+            public int Pace { get; set; }
+            public int Shooting { get; set; }
+            public int Passing { get; set; }
+            public int Dribling { get; set; }
+            public int Defense { get; set; }
+            public int Physical { get; set; }
+            public bool IsInjured { get; set; }
+            public int Number { get; set; }
+            public Player(int number, Position position, int pace, int shooting, int passing, int dribling, int defense, int physical, bool isInjured, string firstName, string lastName, int age) : base(firstName, lastName, age, Role.Player)
             {
-                public int GoalkeeperStats { get; set; }
-                public Goalkeeper(int number, int goalkeeperStats, Position position, int pace, int shooting, int passing, int dribling, int defense, int physical, bool isInjured, string firstName, string lastName, int age) : base(number, position, pace, shooting, passing, dribling, defense, physical, isInjured, firstName, lastName, age)
+                Position = position;
+                Pace = pace;
+                Shooting = shooting;
+                Passing = passing;
+                Dribling = dribling;
+                Defense = defense;
+                Physical = physical;
+                IsInjured = isInjured;
+                Number = number;
+            }
+            public virtual int OverallStats()
+            {
+                return (int)Math.Round((double)(Pace + Shooting + Passing + Dribling + Defense + Physical) / 6);
+            }
+            public virtual void Train()
+            {
+                Random random = new Random();
+                int injurystatus = random.Next(200);
+                if (injurystatus == 0)
                 {
-                    GoalkeeperStats = goalkeeperStats;
+                    IsInjured = true;
+                    Console.WriteLine($"Player {FirstName} {LastName} got injury during training");
                 }
-                public override int OverallStats()
+                else if (injurystatus >= 1 && injurystatus <= 6)
                 {
-                    return GoalkeeperStats;
-                }
-                public override void Train()
-                {
-                    Random random = new Random();
-                    int injurystatus = random.Next(100);
-                    if (injurystatus == 0)
+                    Console.WriteLine($"Player {FirstName} {LastName} has improved");
+                    int bonusstat = random.Next(6);
+                    switch (bonusstat)
                     {
-                        IsInjured = true;
-                        Console.WriteLine($"Player {FirstName} {LastName} got injury during training");
-                    }
-                    else if (injurystatus == 1)
-                    {
-                        GoalkeeperStats += 1;
-                        using (var context = new AppDbContext())
-                        {
-                            var player = context.goalkeepers.Find(Number);
-                            if (player != null)
+                        case 0:
+                            Pace += 1;
+                            using (var context = new AppDbContext())
                             {
-                                player.GoalkeeperStats += 1;
-                                context.SaveChanges();
+                                var player = context.players.Find(Number);
+                                if (player != null)
+                                {
+                                    player.Pace += 1;
+                                    context.SaveChanges();
+                                }
                             }
-                        }
-                        Console.WriteLine($"Player {FirstName} {LastName} has improved");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Player {FirstName} {LastName} trained");
-                    }
-                }
-
-
-            }
-            public class Message
-            {
-                public int ID { get; set; }
-                public string Sender_Name { get; set; }
-                public int Member_ID { get; set; }
-                public string Content { get; set; }
-                public bool IsReaded { get; set; }
-                public Message() { }
-                public void ReadMessage()
-                {
-                    Console.WriteLine($"{Sender_Name} : {Content}");
-                    if (!IsReaded)
-                    {
-                        IsReaded = true;
-                        using (var context = new AppDbContext())
-                        {
-                            var message = context.messages.Find(ID);
-                            if (message != null)
+                            break;
+                        case 1:
+                            Shooting += 1;
+                            using (var context = new AppDbContext())
                             {
-                                message.IsReaded = true;
-                                context.SaveChanges();
+                                var player = context.players.Find(Number);
+                                if (player != null)
+                                {
+                                    player.Shooting += 1;
+                                    context.SaveChanges();
+                                }
                             }
-                        }
+                            break;
+                        case 2:
+                            Passing += 1;
+                            using (var context = new AppDbContext())
+                            {
+                                var player = context.players.Find(Number);
+                                if (player != null)
+                                {
+                                    player.Passing += 1;
+                                    context.SaveChanges();
+                                }
+                            }
+                            break;
+                        case 3:
+                            Dribling += 1;
+                            using (var context = new AppDbContext())
+                            {
+                                var player = context.players.Find(Number);
+                                if (player != null)
+                                {
+                                    player.Dribling += 1;
+                                    context.SaveChanges();
+                                }
+                            }
+                            break;
+                        case 4:
+                            Defense += 1;
+                            using (var context = new AppDbContext())
+                            {
+                                var player = context.players.Find(Number);
+                                if (player != null)
+                                {
+                                    player.Defense += 1;
+                                    context.SaveChanges();
+                                }
+                            }
+                            break;
+                        case 5:
+                            Physical += 1;
+                            using (var context = new AppDbContext())
+                            {
+                                var player = context.players.Find(Number);
+                                if (player != null)
+                                {
+                                    player.Physical += 1;
+                                    context.SaveChanges();
+                                }
+                            }
+                            break;
                     }
                 }
-                public Message(int id, string sender_name, int member_id, string content, bool isReaded)
+                else
                 {
-                    ID = id;
-                    Sender_Name = sender_name;
-                    Member_ID = member_id;
-                    Content = content;
-                    IsReaded = isReaded;
+                    Console.WriteLine($"Player {FirstName} {LastName} trained");
                 }
             }
-            public class LogData
+        }
+        public class Task
+        {
+            public int Member_ID { get; set; }
+            public DateTime Task_End_Date { get; set; }
+            public string TaskType { get; set; }
+            public int Player_Number { get; set; }
+            public Task() { }
+            public Task(int memberid, DateTime date, string taskType, int playernumber)
             {
-                public int Member_ID { get; set; }
-                public string Login { get; set; }
-                public string Password { get; set; }
-                public LogData() { }
-                public LogData(int member_ID, string login, string password)
+                Member_ID = memberid;
+                Task_End_Date = date;
+                TaskType = taskType;
+                Player_Number = playernumber;
+            }
+            public void TaskInfo()
+            {
+                if (TaskType == "Healing")
                 {
-                    Member_ID = member_ID;
-                    Login = login;
-                    Password = password;
+                    Console.WriteLine($"Healing player with number {Player_Number}. Ends in {Task_End_Date - DateTime.Now}");
+                }
+                else
+                {
+                    Console.WriteLine($"Scouting new player for team. Ends in {Task_End_Date - DateTime.Now}");
                 }
             }
-            public void Login()
+        }
+        public class Goalkeeper : Player
+        {
+            public int GoalkeeperStats { get; set; }
+            public Goalkeeper(int number, int goalkeeperStats, Position position, int pace, int shooting, int passing, int dribling, int defense, int physical, bool isInjured, string firstName, string lastName, int age) : base(number, position, pace, shooting, passing, dribling, defense, physical, isInjured, firstName, lastName, age)
             {
-                Console.WriteLine("Insert email: ");
-                string email = Console.ReadLine();
-                Console.WriteLine("Insert password: ");
-                string password = Console.ReadLine();
-
-                // Hash the password to compare with stored hashed passwords
-                string hashedPassword = HashPassword(password);
-
-                using (var context = new AppDbContext())
+                GoalkeeperStats = goalkeeperStats;
+            }
+            public override int OverallStats()
+            {
+                return GoalkeeperStats;
+            }
+            public override void Train()
+            {
+                Random random = new Random();
+                int injurystatus = random.Next(100);
+                if (injurystatus == 0)
                 {
-                    // Find the user by email
-                    var logData = context.logDatas.FirstOrDefault(ld => ld.Login == email);
-
-                    if (logData != null && logData.Password == hashedPassword)
+                    IsInjured = true;
+                    Console.WriteLine($"Player {FirstName} {LastName} got injury during training");
+                }
+                else if (injurystatus == 1)
+                {
+                    GoalkeeperStats += 1;
+                    using (var context = new AppDbContext())
                     {
-                        Console.WriteLine($"Welcome, {email}! You have successfully logged in.");
-                    }
-                    else
-                    {
-                        Console.WriteLine("Invalid login credentials. Please try again.");
-                    }
-                }
-            }
-
-            public static string HashPassword(string password)
-            {
-                using (var sha256 = SHA256.Create())
-                {
-                    var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-                    return Convert.ToBase64String(bytes);
-                }
-            }
-
-            static void Main(string[] args)
-            {
-                List<ClubMember> lista = new List<ClubMember>();
-                List<LogData> loglist = new List<LogData>();
-                using (var context = new AppDbContext())
-                {
-                    var logins = context.logDatas.ToList();
-                    foreach (var login in logins)
-                    {
-                        loglist.Add(new LogData
+                        var player = context.goalkeepers.Find(Number);
+                        if (player != null)
                         {
-                            Member_ID = login.Member_ID,
-                            Login = login.Login,
-                            Password = login.Password
-                        });
+                            player.GoalkeeperStats += 1;
+                            context.SaveChanges();
+                        }
                     }
+                    Console.WriteLine($"Player {FirstName} {LastName} has improved");
                 }
-                using (var context = new AppDbContext())
+                else
                 {
-                    var players = context.players.Where(p => p.Position != Position.Goalkeeper).ToList();
-                    foreach (var player in players)
-                    {
-                        lista.Add(new Player(
-                        player.Number,
-                        player.Position,
-                        player.Pace,
-                        player.Shooting,
-                        player.Passing,
-                        player.Dribling,
-                        player.Defense,
-                        player.Physical,
-                        player.IsInjured,
-                        player.FirstName,
-                        player.LastName,
-                        player.Age));
+                    Console.WriteLine($"Player {FirstName} {LastName} trained");
+                }
+            }
 
-                    }
-                }
-                using (var context = new AppDbContext())
-                {
-                    var stafflist = context.staff.ToList();
-                    foreach (var staff in stafflist)
-                    {
-                        lista.Add(new Staff(
-                        staff.Role,
-                        staff.FirstName,
-                        staff.LastName,
-                        staff.Age,
-                        staff.YearsOfExperience,
-                        staff.DateOfEndTask,
-                        staff.ID));
-                    }
-                }
-                using (var context = new AppDbContext())
-                {
-                    var goalkeepers = context.goalkeepers.ToList();
-                    foreach (var player1 in goalkeepers)
-                    {
-                        lista.Add(new Goalkeeper(
-                        player1.Number,
-                        player1.GoalkeeperStats,
-                        player1.Position,
-                        player1.Pace,
-                        player1.Shooting,
-                        player1.Passing,
-                        player1.Dribling,
-                        player1.Defense,
-                        player1.Physical,
-                        player1.IsInjured,
-                        player1.FirstName,
-                        player1.LastName,
-                        player1.Age));
 
-                    }
-                }
-                List<Message> messageslist = new List<Message>();
-
-                using (var context = new AppDbContext())
+        }
+        public class Message
+        {
+            public int ID { get; set; }
+            public string Sender_Name { get; set; }
+            public int Member_ID { get; set; }
+            public string Content { get; set; }
+            public bool IsReaded { get; set; }
+            public Message() { }
+            public void ReadMessage()
+            {
+                Console.WriteLine($"{Sender_Name} : {Content}");
+                if (!IsReaded)
                 {
-                    var messages = context.messages.ToList();
-                    foreach (var message in messages)
+                    IsReaded = true;
+                    using (var context = new AppDbContext())
                     {
-                        messageslist.Add(new Message(
-                                message.ID,
-                                message.Sender_Name,
-                                message.Member_ID,
-                                message.Content,
-                                (bool)message.IsReaded
-                            ));
-                    }
-                }
-                Club club = new Club("Dębiec FC", lista, messageslist);
-                club.Login();
+                        var message = context.messages.Find(ID);
+                        if (message != null)
+                        {
+                            message.IsReaded = true;
+                            context.SaveChanges();
                         }
                     }
                 }
+            }
+            public Message(int id, string sender_name, int member_id, string content, bool isReaded)
+            {
+                ID = id;
+                Sender_Name = sender_name;
+                Member_ID = member_id;
+                Content = content;
+                IsReaded = isReaded;
+            }
+        }
+        public class LogData
+        {
+            public int Member_ID { get; set; }
+            public string Login { get; set; }
+            public string Password { get; set; }
+            public LogData() { }
+            public LogData(int member_ID, string login, string password)
+            {
+                Member_ID = member_ID;
+                Login = login;
+                Password = password;
+            }
+        }
+        public static void Login()
+        {
+            Console.WriteLine("Insert email: ");
+            string email = Console.ReadLine();
+            Console.WriteLine("Insert password: ");
+            string password = Console.ReadLine();
+
+            // Hash the password to compare with stored hashed passwords
+            string hashedPassword = HashPassword(password);
+
+            using (var context = new AppDbContext())
+            {
+                // Find the user by email
+                var logData = context.logDatas.FirstOrDefault(ld => ld.Login == email);
+
+                if (logData != null && logData.Password == hashedPassword)
+                {
+                    Console.WriteLine($"Welcome, {email}! You have successfully logged in.");
+                }
+                else
+                {
+                    Console.WriteLine("Invalid login credentials. Please try again.");
+                }
+            }
+        }
+
+        public static string HashPassword(string password)
+        {
+            using (var sha256 = SHA256.Create())
+            {
+                var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+                return Convert.ToBase64String(bytes);
+            }
+        }
+
+        static void Main(string[] args)
+        {
+            List<ClubMember> lista = new List<ClubMember>();
+            List<LogData> loglist = new List<LogData>();
+            using (var context = new AppDbContext())
+            {
+                var logins = context.logDatas.ToList();
+                foreach (var login in logins)
+                {
+                    loglist.Add(new LogData
+                    {
+                        Member_ID = login.Member_ID,
+                        Login = login.Login,
+                        Password = login.Password
+                    });
+                }
+            }
+            using (var context = new AppDbContext())
+            {
+                var players = context.players.Where(p => p.Position != Position.Goalkeeper).ToList();
+                foreach (var player in players)
+                {
+                    lista.Add(new Player(
+                    player.Number,
+                    player.Position,
+                    player.Pace,
+                    player.Shooting,
+                    player.Passing,
+                    player.Dribling,
+                    player.Defense,
+                    player.Physical,
+                    player.IsInjured,
+                    player.FirstName,
+                    player.LastName,
+                    player.Age));
+
+                }
+            }
+            using (var context = new AppDbContext())
+            {
+                var stafflist = context.staff.ToList();
+                foreach (var staff in stafflist)
+                {
+                    lista.Add(new Staff(
+                    staff.Role,
+                    staff.FirstName,
+                    staff.LastName,
+                    staff.Age,
+                    staff.YearsOfExperience,
+                    staff.DateOfEndTask,
+                    staff.ID));
+                }
+            }
+            using (var context = new AppDbContext())
+            {
+                var goalkeepers = context.goalkeepers.ToList();
+                foreach (var player1 in goalkeepers)
+                {
+                    lista.Add(new Goalkeeper(
+                    player1.Number,
+                    player1.GoalkeeperStats,
+                    player1.Position,
+                    player1.Pace,
+                    player1.Shooting,
+                    player1.Passing,
+                    player1.Dribling,
+                    player1.Defense,
+                    player1.Physical,
+                    player1.IsInjured,
+                    player1.FirstName,
+                    player1.LastName,
+                    player1.Age));
+
+                }
+            }
+            List<Message> messageslist = new List<Message>();
+
+            using (var context = new AppDbContext())
+            {
+                var messages = context.messages.ToList();
+                foreach (var message in messages)
+                {
+                    messageslist.Add(new Message(
+                            message.ID,
+                            message.Sender_Name,
+                            message.Member_ID,
+                            message.Content,
+                            (bool)message.IsReaded
+                        ));
+                }
+            }
+            List<Task> taskslist = new List<Task>();
+
+            using (var context = new AppDbContext())
+            {
+                var tasks = context.tasks.ToList();
+                foreach (var task in tasks)
+                {
+                    taskslist.Add(new Task(
+                            task.Member_ID,
+                            task.Task_End_Date,
+                            task.TaskType,
+                            task.Player_Number
+                        ));
+                }
+            }
+            Club club = new Club("Dębiec FC", lista, messageslist, taskslist);
+            Login();
+        }
+    }
 }
+
