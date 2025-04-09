@@ -8,6 +8,10 @@ using System.Threading.Tasks;
 using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
+using static Clubs.AppDbContext;
+using static Clubs.login;
+using static Clubs.player;
+
 namespace Clubs
 {
     internal class Program
@@ -45,11 +49,11 @@ namespace Clubs
             public Action<string, ClubMember> MessageSender { get; set; }
             public readonly Dictionary<Role, List<string>> Permissions = new Dictionary<Role, List<string>>
             {
-                { Role.Coach,new List<string>{"Make lineup","See lineup","Make team training session","Chat" } },
-                { Role.Medic, new List<string>{"Heal player","Chat"} },
-                { Role.Boss, new List<string>{"See lineup","Sack staff","Hire staff"} },
-                { Role.Scout, new List<string>{"Scout player","Chat"} },
-                { Role.Player, new List<string>{"Chat","See lineup","Train"} }
+                 { Role.Coach,new List<string>{"Make lineup","See lineup","Make team training session","Chat" } },
+                 { Role.Medic, new List<string>{"Heal player","Chat"} },
+                 { Role.Boss, new List<string>{"See lineup","Sack staff","Hire staff"} },
+                 { Role.Scout, new List<string>{"Scout player","Chat"} },
+                 { Role.Player, new List<string>{"Chat","See lineup","Train"} }
 
             };
             public bool HasThatPermission(ClubMember clubmember, string permission)
@@ -624,82 +628,7 @@ namespace Clubs
                 Console.WriteLine("-------------------------------------------------------------");
             }
         }
-        public class AppDbContext : DbContext
-        {
-            public DbSet<Player> players { get; set; }
-            public DbSet<Staff> staff { get; set; }
-            public DbSet<Goalkeeper> goalkeepers { get; set; }
-            public DbSet<Message> messages { get; set; }
-            public DbSet<LogData> logDatas { get; set; }
-            public DbSet<Task> tasks { get; set; }
-            protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-            {
-                optionsBuilder.UseMySql("Server=localhost;Port=3305;Database=club;User=root;Password='123';",
-                    new MySqlServerVersion(new Version(11, 6, 0)));
-            }
-            protected override void OnModelCreating(ModelBuilder modelBuilder)
-            {
-                modelBuilder.Entity<Player>().HasKey(p => p.Number);
-                modelBuilder.Entity<Staff>().HasKey(s => s.ID);
-                modelBuilder.Entity<LogData>().HasKey(l => l.Member_ID);
-                modelBuilder.Entity<Task>().HasKey(t => t.Member_ID);
-                modelBuilder.Entity<Message>().HasKey(m => m.ID);
-                modelBuilder.Entity<Player>().ToTable("players");
-                modelBuilder.Entity<Staff>().ToTable("staff");
-                modelBuilder.Entity<Goalkeeper>().ToTable("goalkeepers");
-                modelBuilder.Entity<Message>().ToTable("messages");
-                modelBuilder.Entity<LogData>().ToTable("logdatas");
-                modelBuilder.Entity<Task>().ToTable("tasks");
-                modelBuilder.Entity<Player>().Ignore(p => p.Role);
-                modelBuilder.Entity<Player>()
-       .Property(p => p.FirstName).HasColumnOrder(1);
-
-                modelBuilder.Entity<Player>()
-                    .Property(p => p.LastName).HasColumnOrder(2);
-
-                modelBuilder.Entity<Player>()
-                    .Property(p => p.Position).HasColumnOrder(3);
-
-                modelBuilder.Entity<Player>()
-                    .Property(p => p.Pace).HasColumnOrder(4);
-
-                modelBuilder.Entity<Player>()
-                    .Property(p => p.Shooting).HasColumnOrder(5);
-
-                modelBuilder.Entity<Player>()
-                    .Property(p => p.Passing).HasColumnOrder(6);
-
-                modelBuilder.Entity<Player>()
-                    .Property(p => p.Dribling).HasColumnOrder(7);
-
-                modelBuilder.Entity<Player>()
-                    .Property(p => p.Defense).HasColumnOrder(8);
-
-                modelBuilder.Entity<Player>()
-                    .Property(p => p.Physical).HasColumnOrder(9);
-
-                modelBuilder.Entity<Player>()
-                    .Property(p => p.Number).HasColumnOrder(10);
-
-                modelBuilder.Entity<Player>()
-                    .Property(p => p.IsInjured).HasColumnOrder(11);
-
-                modelBuilder.Entity<Player>()
-                    .Property(p => p.Age).HasColumnOrder(12);
-                modelBuilder.Entity<Player>()
-                    .Property(p => p.Position)
-                    .HasConversion(
-                        v => v.ToString(),
-                        v => (Position)Enum.Parse(typeof(Position), v)
-                    );
-                modelBuilder.Entity<Staff>()
-        .Property(c => c.Role)
-        .HasConversion(
-            v => v.ToString(),
-            v => (Role)Enum.Parse(typeof(Role), v)
-        );
-            }
-        }
+        
         public class ClubMember
         {
             public string FirstName { get; set; }
@@ -751,128 +680,7 @@ namespace Clubs
             }
         }
 
-        public class Player : ClubMember
-        {
-            public Position Position { get; set; }
-            public int Pace { get; set; }
-            public int Shooting { get; set; }
-            public int Passing { get; set; }
-            public int Dribling { get; set; }
-            public int Defense { get; set; }
-            public int Physical { get; set; }
-            public bool IsInjured { get; set; }
-            public int Number { get; set; }
-            public Player(int number, Position position, int pace, int shooting, int passing, int dribling, int defense, int physical, bool isInjured, string firstName, string lastName, int age) : base(firstName, lastName, age, Role.Player)
-            {
-                Position = position;
-                Pace = pace;
-                Shooting = shooting;
-                Passing = passing;
-                Dribling = dribling;
-                Defense = defense;
-                Physical = physical;
-                IsInjured = isInjured;
-                Number = number;
-            }
-            public virtual int OverallStats()
-            {
-                return (int)Math.Round((double)(Pace + Shooting + Passing + Dribling + Defense + Physical) / 6);
-            }
-            public virtual void Train()
-            {
-                Random random = new Random();
-                int injurystatus = random.Next(200);
-                if (injurystatus == 0)
-                {
-                    IsInjured = true;
-                    Console.WriteLine($"Player {FirstName} {LastName} got injury during training");
-                }
-                else if (injurystatus >= 1 && injurystatus <= 6)
-                {
-                    Console.WriteLine($"Player {FirstName} {LastName} has improved");
-                    int bonusstat = random.Next(6);
-                    switch (bonusstat)
-                    {
-                        case 0:
-                            Pace += 1;
-                            using (var context = new AppDbContext())
-                            {
-                                var player = context.players.Find(Number);
-                                if (player != null)
-                                {
-                                    player.Pace += 1;
-                                    context.SaveChanges();
-                                }
-                            }
-                            break;
-                        case 1:
-                            Shooting += 1;
-                            using (var context = new AppDbContext())
-                            {
-                                var player = context.players.Find(Number);
-                                if (player != null)
-                                {
-                                    player.Shooting += 1;
-                                    context.SaveChanges();
-                                }
-                            }
-                            break;
-                        case 2:
-                            Passing += 1;
-                            using (var context = new AppDbContext())
-                            {
-                                var player = context.players.Find(Number);
-                                if (player != null)
-                                {
-                                    player.Passing += 1;
-                                    context.SaveChanges();
-                                }
-                            }
-                            break;
-                        case 3:
-                            Dribling += 1;
-                            using (var context = new AppDbContext())
-                            {
-                                var player = context.players.Find(Number);
-                                if (player != null)
-                                {
-                                    player.Dribling += 1;
-                                    context.SaveChanges();
-                                }
-                            }
-                            break;
-                        case 4:
-                            Defense += 1;
-                            using (var context = new AppDbContext())
-                            {
-                                var player = context.players.Find(Number);
-                                if (player != null)
-                                {
-                                    player.Defense += 1;
-                                    context.SaveChanges();
-                                }
-                            }
-                            break;
-                        case 5:
-                            Physical += 1;
-                            using (var context = new AppDbContext())
-                            {
-                                var player = context.players.Find(Number);
-                                if (player != null)
-                                {
-                                    player.Physical += 1;
-                                    context.SaveChanges();
-                                }
-                            }
-                            break;
-                    }
-                }
-                else
-                {
-                    Console.WriteLine($"Player {FirstName} {LastName} trained");
-                }
-            }
-        }
+        
         public class Task
         {
             public int Member_ID { get; set; }
@@ -973,53 +781,6 @@ namespace Clubs
                 Member_ID = member_id;
                 Content = content;
                 IsReaded = isReaded;
-            }
-        }
-        public class LogData
-        {
-            public int Member_ID { get; set; }
-            public string Login { get; set; }
-            public string Password { get; set; }
-            public LogData() { }
-            public LogData(int member_ID, string login, string password)
-            {
-                Member_ID = member_ID;
-                Login = login;
-                Password = password;
-            }
-        }
-        public static void Login()
-        {
-            Console.WriteLine("Insert email: ");
-            string email = Console.ReadLine();
-            Console.WriteLine("Insert password: ");
-            string password = Console.ReadLine();
-
-            // Hash the password to compare with stored hashed passwords
-            string hashedPassword = HashPassword(password);
-
-            using (var context = new AppDbContext())
-            {
-                // Find the user by email
-                var logData = context.logDatas.FirstOrDefault(ld => ld.Login == email);
-
-                if (logData != null && logData.Password == hashedPassword)
-                {
-                    Console.WriteLine($"Welcome, {email}! You have successfully logged in.");
-                }
-                else
-                {
-                    Console.WriteLine("Invalid login credentials. Please try again.");
-                }
-            }
-        }
-
-        public static string HashPassword(string password)
-        {
-            using (var sha256 = SHA256.Create())
-            {
-                var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-                return Convert.ToBase64String(bytes);
             }
         }
 
@@ -1134,3 +895,4 @@ namespace Clubs
         }
     }
 }
+
