@@ -4,9 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static Clubs.Program;
-using static Clubs.Tasks;
+
 using static Clubs.AppDbContext;
 using System.Security.Cryptography;
+
 
 namespace Clubs
 {
@@ -25,13 +26,8 @@ namespace Clubs
                 Password = password;
             }
         }
-        public static void Login()
+        public static bool Login(string password, string email)
         {
-            Console.WriteLine("Insert email: ");
-            string email = Console.ReadLine();
-            Console.WriteLine("Insert password: ");
-            string password = Console.ReadLine();
-
             // Hash the password to compare with stored hashed passwords
             string hashedPassword = HashPassword(password);
 
@@ -43,10 +39,12 @@ namespace Clubs
                 if (logData != null && logData.Password == hashedPassword)
                 {
                     Console.WriteLine($"Welcome, {email}! You have successfully logged in.");
+                    return true;
                 }
                 else
                 {
                     Console.WriteLine("Invalid login credentials. Please try again.");
+                    return false;
                 }
             }
         }
@@ -60,4 +58,4 @@ namespace Clubs
             }
         }
     }
-}
+    }

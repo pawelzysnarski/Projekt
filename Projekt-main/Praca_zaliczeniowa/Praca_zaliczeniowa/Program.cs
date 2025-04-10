@@ -9,9 +9,12 @@ using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 using static Clubs.AppDbContext;
-using static Clubs.login;
-using static Clubs.player;
 
+using static Clubs.Classes.clubMember;
+using static Clubs.Classes.staff;
+using static Clubs.login;
+using static Clubs.Classes.goalkeeper;
+using static Clubs.Classes.player;
 namespace Clubs
 {
     internal class Program
@@ -45,15 +48,15 @@ namespace Clubs
             public List<Task> Tasks { get; set; }
             public string Name { get; set; }
             public List<ClubMember> Members { get; set; }
-            public Dictionary<Position, ClubMember> Lineup { get; set; }
+            public Dictionary<Player, Position> Lineup { get; set; }
             public Action<string, ClubMember> MessageSender { get; set; }
+            public event Action<Staff> OnTaskEnd;
             public readonly Dictionary<Role, List<string>> Permissions = new Dictionary<Role, List<string>>
             {
-                 { Role.Coach,new List<string>{"Make lineup","See lineup","Make team training session","Chat" } },
-                 { Role.Medic, new List<string>{"Heal player","Chat"} },
-                 { Role.Boss, new List<string>{"See lineup","Sack staff","Hire staff"} },
-                 { Role.Scout, new List<string>{"Scout player","Chat"} },
-                 { Role.Player, new List<string>{"Chat","See lineup","Train"} }
+                { Role.Coach,new List<string>{"Make lineup","See lineup","Make team training session","Chat" } },
+                { Role.Medic, new List<string>{"Heal player","Chat"} },
+                { Role.Boss, new List<string>{"See lineup","Sack staff","Hire staff"} },
+                { Role.Player, new List<string>{"Chat","See lineup","Train"} }
 
             };
             public bool HasThatPermission(ClubMember clubmember, string permission)
@@ -71,6 +74,7 @@ namespace Clubs
                 Members = members;
                 Messages = messages;
                 Tasks = tasks;
+                Lineup = new Dictionary<Player, Position>();
             }
             public void MyTasks(Staff staff)
             {
@@ -94,6 +98,7 @@ namespace Clubs
                             {
                                 context.tasks.Remove(taskToRemove);
                                 context.SaveChanges();
+                                OnTaskEnd?.Invoke(staff);
                             }
                         }
                     }
@@ -103,13 +108,27 @@ namespace Clubs
             {
                 Console.WriteLine("Lineup:");
                 int i = 1;
-                foreach (var player in Lineup)
+                foreach (var player in Lineup.OrderBy(p => p.Value))
                 {
-                    Console.WriteLine($"{i}. {player.Key}: {player.Value.FirstName} {player.Value.LastName}");
+                    if (player.Key.IsInjured)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine($"{i}. {player.Value}: {player.Key.FirstName} {player.Key.LastName} (Injured)");
+                        Console.ResetColor();
+                    }
+                    else if (player.Value != player.Key.Position)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine($"{i}. {player.Value}: {player.Key.FirstName} {player.Key.LastName}");
+                        Console.ResetColor();
+                    }
+                    else
+                    {
+                        Console.WriteLine($"{i}. {player.Value}: {player.Key.FirstName} {player.Key.LastName}");
+                    }
                     i++;
                 }
             }
-
             public void MyMessages(ClubMember clubMember)
             {
                 Console.WriteLine("Your messages:");
@@ -169,6 +188,8 @@ namespace Clubs
                             break;
                     }
                 }
+
+                Console.WriteLine("Message was sent");
             }
             public void SendToAll(string content, ClubMember sender)
             {
@@ -344,20 +365,51 @@ namespace Clubs
 
                 }
             }
-            /*public void SetLineup()
+            public void SetLineup()
             {
-                Console.WriteLine("Enter the formation (e.g., 4-4-2, 4-3-3, etc.):");
-                string formation = Console.ReadLine();
+                int numDefenders = 0;
+                int numMidfielders = 0;
+                int numForwards = 0;
+                bool formationchecker = false;
+                while (!formationchecker)
+                {
+                    try
+                    {
+                        Console.WriteLine("Enter the formation (e.g., 4-4-2, 4-3-3, etc.):");
+                        string formation = Console.ReadLine();
 
-                string[] positions = formation.Split('-');
-                int numDefenders = int.Parse(positions[0]);
-                int numMidfielders = int.Parse(positions[1]);
-                int numForwards = int.Parse(positions[2]);
-
+                        string[] positions = formation.Split('-');
+                        numDefenders = int.Parse(positions[0]);
+                        numMidfielders = int.Parse(positions[1]);
+                        numForwards = int.Parse(positions[2]);
+                        if (numDefenders < 1 || numMidfielders < 1 || numForwards < 1)
+                        {
+                            Console.WriteLine("Invalid formation. Please enter a valid formation.");
+                        }
+                        else if (numDefenders > 5 || numMidfielders > 5 || numForwards > 5)
+                        {
+                            Console.WriteLine("Invalid formation. Please enter a valid formation.");
+                        }
+                        else if (numDefenders + numMidfielders + numForwards != 10)
+                        {
+                            Console.WriteLine("Wrong players number. Please enter a valid formation.");
+                        }
+                        else
+                        {
+                            formationchecker = true;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Invalid input. Please enter a valid formation.");
+                    }
+                    Console.ReadKey();
+                    Console.Clear();
+                }
                 Console.WriteLine("Assign players to positions.");
 
                 List<Player> availablePlayers = Members.OfType<Player>().ToList();
-                Lineup = new Dictionary<Position, ClubMember>();
+                Lineup = new Dictionary<Player, Position>();
 
                 // Helper method to display players with position highlighting
                 void DisplayPlayersWithHighlight(Position targetPosition)
@@ -388,11 +440,15 @@ namespace Clubs
                 {
                     Console.WriteLine($"{j + 1}. {goalkeepers[j].FirstName} {goalkeepers[j].LastName}");
                 }
-
+                int gkNumber = 0;
                 Console.WriteLine("Select goalkeeper number:");
-                int gkNumber = int.Parse(Console.ReadLine()) - 1;
+                while (int.TryParse(Console.ReadLine(), out gkNumber) == false || gkNumber < 1 || gkNumber > goalkeepers.Count)
+                {
+                    Console.WriteLine("Invalid choice. Please select a valid goalkeeper number.");
+                }
+                gkNumber -= 1;
                 Player selectedGoalkeeper = goalkeepers[gkNumber];
-                Lineup.Add(Position.Goalkeeper, selectedGoalkeeper);
+                Lineup.Add(selectedGoalkeeper, Position.Goalkeeper);
                 availablePlayers.Remove(selectedGoalkeeper);
 
                 // Assign defenders with multiple players per position
@@ -402,25 +458,34 @@ namespace Clubs
                     Console.WriteLine($"\nChoosing defender {i + 1} of {numDefenders}:");
                     Console.WriteLine("Available positions: LeftBack, CentreBack, RightBack");
                     Console.Write("Enter position: ");
-                    Position defenderPos = Enum.Parse<Position>(Console.ReadLine(), true);
-
+                    Position defenderPos;
+                    while (true)
+                    {
+                        string input = Console.ReadLine();
+                        if (Enum.TryParse(input, true, out defenderPos) && Enum.IsDefined(typeof(Position), defenderPos))
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            Console.WriteLine("Invalid position. Please enter a valid position:");
+                        }
+                    }
                     DisplayPlayersWithHighlight(defenderPos);
 
                     Console.WriteLine("Select player number:");
-                    int playerNumber = int.Parse(Console.ReadLine()) - 1;
+                    int playerNumber;
+                    while (int.TryParse(Console.ReadLine(), out playerNumber) == false || playerNumber < 1 || playerNumber > availablePlayers.Count)
+                    {
+                        Console.WriteLine("Invalid choice. Please select a valid player number.");
+                    }
 
                     // Get the selected player
                     var orderedPlayers = availablePlayers.OrderByDescending(p => p.Position == defenderPos).ToList();
                     Player selectedDefender = orderedPlayers[playerNumber];
 
-                    // Create unique key if position already exists
-                    Position lineupKey = defenderPos;
-                    if (Lineup.ContainsKey(defenderPos))
-                    {
-                        lineupKey = (Position)((int)defenderPos + i + 1); // Create unique key
-                    }
 
-                    Lineup.Add(lineupKey, selectedDefender);
+                    Lineup.Add(selectedDefender, defenderPos);
                     availablePlayers.Remove(selectedDefender);
                 }
 
@@ -431,23 +496,34 @@ namespace Clubs
                     Console.WriteLine($"\nChoosing midfielder {i + 1} of {numMidfielders}:");
                     Console.WriteLine("Available positions: LeftMidfielder, Midfielder, RightMidfielder, DefensiveMidfielder, OffensiveMidfielder");
                     Console.Write("Enter position: ");
-                    Position midfielderPos = Enum.Parse<Position>(Console.ReadLine(), true);
+                    Position midfielderPos;
+                    while (true)
+                    {
+                        string input = Console.ReadLine();
+                        if (Enum.TryParse(input, true, out midfielderPos) && Enum.IsDefined(typeof(Position), midfielderPos))
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            Console.WriteLine("Invalid position. Please enter a valid position:");
+                        }
+                    }
 
                     DisplayPlayersWithHighlight(midfielderPos);
 
                     Console.WriteLine("Select player number:");
-                    int playerNumber = int.Parse(Console.ReadLine()) - 1;
-
+                    int playerNumber;
+                    while (int.TryParse(Console.ReadLine(), out playerNumber) == false || playerNumber < 1 || playerNumber > availablePlayers.Count)
+                    {
+                        Console.WriteLine("Invalid choice. Please select a valid player number.");
+                    }
+                    playerNumber -= 1;
                     var orderedPlayers = availablePlayers.OrderByDescending(p => p.Position == midfielderPos).ToList();
                     Player selectedMidfielder = orderedPlayers[playerNumber];
 
-                    Position lineupKey = midfielderPos;
-                    if (Lineup.ContainsKey(midfielderPos))
-                    {
-                        lineupKey = (Position)((int)midfielderPos + i + 1);
-                    }
 
-                    Lineup.Add(lineupKey, selectedMidfielder);
+                    Lineup.Add(selectedMidfielder, midfielderPos);
                     availablePlayers.Remove(selectedMidfielder);
                 }
 
@@ -458,24 +534,36 @@ namespace Clubs
                     Console.WriteLine($"\nChoosing forward {i + 1} of {numForwards}:");
                     Console.WriteLine("Available positions: LeftWinger, RightWinger, Striker");
                     Console.Write("Enter position: ");
-                    Position forwardPos = Enum.Parse<Position>(Console.ReadLine(), true);
+                    Position forwardPos;
+                    while (true)
+                    {
+                        string input = Console.ReadLine();
+                        if (Enum.TryParse(input, true, out forwardPos) && Enum.IsDefined(typeof(Position), forwardPos))
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            Console.WriteLine("Invalid position. Please enter a valid position:");
+                        }
+                    }
 
                     DisplayPlayersWithHighlight(forwardPos);
 
                     Console.WriteLine("Select player number:");
-                    int playerNumber = int.Parse(Console.ReadLine()) - 1;
-
+                    int playerNumber = 0;
+                    while (int.TryParse(Console.ReadLine(), out playerNumber) == false || playerNumber < 1 || playerNumber > availablePlayers.Count)
+                    {
+                        Console.WriteLine("Invalid choice. Please select a valid player number.");
+                    }
+                    playerNumber -= 1;
                     var orderedPlayers = availablePlayers.OrderByDescending(p => p.Position == forwardPos).ToList();
                     Player selectedForward = orderedPlayers[playerNumber];
 
-                    Position lineupKey = forwardPos;
-                    if (Lineup.ContainsKey(forwardPos))
-                    {
-                        lineupKey = (Position)((int)forwardPos + i + 1);
-                    }
 
-                    Lineup.Add(lineupKey, selectedForward);
+                    Lineup.Add(selectedForward, forwardPos);
                     availablePlayers.Remove(selectedForward);
+                    Console.Clear();
                 }
 
                 // Display final lineup
@@ -483,28 +571,23 @@ namespace Clubs
                 Console.WriteLine("\n=== SELECTED LINEUP ===");
 
                 // Group by base position (without the +i modification)
-                var groupedLineup = Lineup.GroupBy(kvp =>
-                    Enum.IsDefined(typeof(Position), kvp.Key) ? kvp.Key : (Position)((int)kvp.Key / 10 * 10));
-
-                foreach (var group in groupedLineup)
-                {
-                    if (group.Count() > 1)
-                    {
-                        Console.WriteLine($"{group.Key}s:");
-                        foreach (var player in group)
-                        {
-                            Console.WriteLine($"- {player.Value.FirstName} {player.Value.LastName}");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine($"{group.Key}: {group.First().Value.FirstName} {group.First().Value.LastName}");
-                    }
-                }
-            }*/
+                SeeLineup();
+            }
             public void HireClubMember(ClubMember clubMember)
             {
                 Members.Add(clubMember);
+                using (var context = new AppDbContext())
+                {
+                    if (clubMember is Player player)
+                    {
+                        context.players.Add(player);
+                    }
+                    else if (clubMember is Staff staff)
+                    {
+                        context.staff.Add(staff);
+                    }
+                    context.SaveChanges();
+                }
                 Console.WriteLine($"{clubMember.FirstName} {clubMember.LastName} hired to the club.");
             }
             public void SackClubMember(ClubMember clubMember)
@@ -523,8 +606,16 @@ namespace Clubs
                             var playerToRemove = context.players.Find(player.Number);
                             if (playerToRemove != null)
                             {
-                                context.players.Remove(playerToRemove);
-                                context.SaveChanges();
+                                if (Lineup.ContainsKey(playerToRemove))
+                                {
+                                    Console.WriteLine("You cannot remove player who is in current lineup");
+                                }
+                                else
+                                {
+                                    context.players.Remove(playerToRemove);
+                                    context.SaveChanges();
+                                    Console.WriteLine($"{playerToRemove.FirstName} {playerToRemove.LastName} was removed from club");
+                                }
                             }
                         }
                     }
@@ -537,6 +628,7 @@ namespace Clubs
                             {
                                 context.staff.Remove(staffToRemove);
                                 context.SaveChanges();
+                                Console.WriteLine($"{staffToRemove.FirstName} {staffToRemove.LastName} was removed from club");
                             }
                         }
                     }
@@ -628,57 +720,24 @@ namespace Clubs
                 Console.WriteLine("-------------------------------------------------------------");
             }
         }
+        static void OnTaskEnd(Staff staff)
+        {
+            Console.WriteLine($"Task ended for {staff.FirstName} {staff.LastName}");
+        }
         
-        public class ClubMember
+        
+        public class Lineup
         {
-            public string FirstName { get; set; }
-            public string LastName { get; set; }
-            public int Age { get; set; }
-            public Role Role { get; set; }
-            public ClubMember(string firstName, string lastName, int age, Role role)
+            public int Number { get; set; }
+            public Position Position { get; set; }
+            public Lineup() { }
+            public Lineup(int number, Position position)
             {
-                FirstName = firstName;
-                LastName = lastName;
-                Age = age;
-                Role = role;
+                Number = number;
+                Position = position;
             }
         }
-        public class Staff : ClubMember
-        {
-            public int ID { get; set; }
-            public int YearsOfExperience { get; set; }
-            public DateTime? DateOfEndTask { get; set; }
-            public Staff(Role role, string firstName, string lastName, int age, int yearsOfExperience, DateTime? dateOfEndTask, int iD) : base(firstName, lastName, age, role)
-            {
-                YearsOfExperience = yearsOfExperience;
-                DateOfEndTask = dateOfEndTask;
-                ID = iD;
-            }
-            public void StartTask(DateTime endTime, Player player)
-            {
-                if (endTime != null)
-                {
-                    DateOfEndTask = endTime;
-                    Console.WriteLine($"{LastName} starts task. It will exired at {endTime.ToLongDateString()}");
-                    using (var context = new AppDbContext())
-                    {
-                        var now = DateTime.Now;
-                        now.AddHours(36);
-                        string type;
-                        if (Role == Role.Medic)
-                        {
-                            type = "Healing";
-                        }
-                        else
-                        {
-                            type = "Scouting";
-                        }
-                        context.tasks.Add(new Task(ID, now, type, player.Number));
-                        context.SaveChanges();
-                    }
-                }
-            }
-        }
+        
 
         
         public class Task
@@ -701,54 +760,9 @@ namespace Clubs
                 {
                     Console.WriteLine($"Healing player with number {Player_Number}. Ends in {Task_End_Date - DateTime.Now}");
                 }
-                else
-                {
-                    Console.WriteLine($"Scouting new player for team. Ends in {Task_End_Date - DateTime.Now}");
-                }
             }
         }
-        public class Goalkeeper : Player
-        {
-            public int GoalkeeperStats { get; set; }
-            public Goalkeeper(int number, int goalkeeperStats, Position position, int pace, int shooting, int passing, int dribling, int defense, int physical, bool isInjured, string firstName, string lastName, int age) : base(number, position, pace, shooting, passing, dribling, defense, physical, isInjured, firstName, lastName, age)
-            {
-                GoalkeeperStats = goalkeeperStats;
-            }
-            public override int OverallStats()
-            {
-                return GoalkeeperStats;
-            }
-            public override void Train()
-            {
-                Random random = new Random();
-                int injurystatus = random.Next(100);
-                if (injurystatus == 0)
-                {
-                    IsInjured = true;
-                    Console.WriteLine($"Player {FirstName} {LastName} got injury during training");
-                }
-                else if (injurystatus == 1)
-                {
-                    GoalkeeperStats += 1;
-                    using (var context = new AppDbContext())
-                    {
-                        var player = context.goalkeepers.Find(Number);
-                        if (player != null)
-                        {
-                            player.GoalkeeperStats += 1;
-                            context.SaveChanges();
-                        }
-                    }
-                    Console.WriteLine($"Player {FirstName} {LastName} has improved");
-                }
-                else
-                {
-                    Console.WriteLine($"Player {FirstName} {LastName} trained");
-                }
-            }
-
-
-        }
+        
         public class Message
         {
             public int ID { get; set; }
@@ -783,6 +797,7 @@ namespace Clubs
                 IsReaded = isReaded;
             }
         }
+        
 
         static void Main(string[] args)
         {
@@ -891,8 +906,411 @@ namespace Clubs
                 }
             }
             Club club = new Club("Dębiec FC", lista, messageslist, taskslist);
-            Login();
+
+            club.OnTaskEnd += OnTaskEnd;
+            foreach (var task in taskslist)
+            {
+                if (task.Task_End_Date < DateTime.Now)
+                {
+                    var staff = club.Members.OfType<Staff>().FirstOrDefault(s => s.ID == task.Member_ID);
+                    if (staff != null)
+                    {
+                        staff.DateOfEndTask = null;
+                        club.Members.OfType<Player>().FirstOrDefault(p => p.Number == task.Player_Number).IsInjured = false;
+                        club.EndTask(staff);
+                    }
+                }
+            }
+            using (var context = new AppDbContext())
+            {
+                var lineup = context.lineup.ToList();
+                foreach (var player in lineup)
+                {
+                    var currplayer = context.players.FirstOrDefault(p => p.Number == player.Number);
+                    club.Lineup.Add(
+                        currplayer,
+                        player.Position
+                    );
+                }
+            }
+            while (true)
+            {
+                Console.WriteLine("Insert email: ");
+                string email = Console.ReadLine();
+                Console.WriteLine("Insert password: ");
+                string password = Console.ReadLine();
+                while (!Login(password, email))
+                {
+                    Console.ReadKey();
+                    Console.Clear();
+                    Console.WriteLine("Insert email: ");
+                    email = Console.ReadLine();
+                    Console.WriteLine("Insert password: ");
+                    password = Console.ReadLine();
+                }
+                bool islogged = true;
+                Console.ReadKey();
+                Console.Clear();
+                Console.WriteLine("Welcome to the club!");
+                ClubMember clubMember;
+                List<string> firstNames = new List<string>
+            {
+                "Adam", "Bartosz", "Cezary", "Damian", "Emil", "Filip",
+                "Grzegorz", "Hubert", "Igor", "Jakub", "Kamil", "Łukasz",
+                "Mateusz", "Norbert", "Oskar", "Patryk", "Rafał", "Sebastian",
+                "Tomasz", "Wojciech", "Zbigniew", "Adrian", "Daniel", "Ernest",
+                "Fryderyk", "Henryk", "Janusz", "Karol", "Leon", "Michał"
+            };
+
+                List<string> lastNames = new List<string>
+            {
+                "Kowalski", "Nowak", "Wiśniewski", "Wójcik", "Kaczmarek", "Mazur",
+                "Zieliński", "Szymański", "Woźniak", "Dąbrowski", "Zając", "Król",
+                "Pawlak", "Dudek", "Piotrowski", "Kubiak", "Sobczak", "Malinowski",
+                "Jaworski", "Górski", "Lis", "Baran", "Czarnecki", "Błaszczyk",
+                "Chmielewski", "Wróbel", "Sikora", "Olejniczak", "Kołodziej", "Kamiński"
+            };
+                using (var context = new AppDbContext())
+                {
+                    var curruser = context.logDatas.FirstOrDefault(ld => ld.Login == email).Member_ID;
+                    clubMember = context.players.FirstOrDefault(p => p.Number == curruser) ?? (ClubMember)context.staff.FirstOrDefault(s => s.ID == curruser);
+                }
+                while (islogged)
+                {
+                    Console.WriteLine("Please select an option");
+                    if (clubMember is Player player)
+                    {
+                        if (club.HasThatPermission(player, "Chat"))
+                        {
+                            Console.WriteLine($"1. Chat");
+                        }
+                        if (club.HasThatPermission(player, "See lineup"))
+                        {
+                            Console.WriteLine($"2. See lineup");
+                        }
+                        if (club.HasThatPermission(player, "Train"))
+                        {
+                            Console.WriteLine($"3. Train");
+                        }
+                        Console.WriteLine($"4. Logout");
+                        Console.WriteLine($"5. Exit");
+                        string choice = Console.ReadLine();
+                        Console.Clear();
+                        switch (choice)
+                        {
+                            case "1":
+                                Console.WriteLine("1. Send message");
+                                Console.WriteLine("2. See messages");
+                                string choice1 = Console.ReadLine();
+                                Console.Clear();
+                                switch (choice1)
+                                {
+                                    case "1":
+                                        club.SendMessage(player);
+                                        break;
+                                    case "2":
+                                        club.MyMessages(player);
+                                        break;
+                                    default:
+                                        Console.WriteLine("Invalid choice");
+                                        break;
+                                }
+                                break;
+                            case "2":
+                                club.SeeLineup();
+                                break;
+                            case "3":
+                                player.Train();
+                                break;
+                            case "4":
+                                islogged = false;
+                                Console.WriteLine("See you soon");
+                                break;
+                            case "5":
+                                Console.WriteLine("Thanks for using our program");
+                                Environment.Exit(0);
+                                break;
+                            default:
+                                Console.WriteLine("Invalid choice");
+                                break;
+                        }
+
+                    }
+                    else if (clubMember is Staff staff)
+                    {
+                        if (club.HasThatPermission(staff, "Chat"))
+                        {
+                            Console.ForegroundColor = ConsoleColor.White;
+                            Console.WriteLine($"1. Chat");
+                        }
+                        else
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine($"1. Chat");
+                        }
+                        if (club.HasThatPermission(staff, "Make lineup"))
+                        {
+                            Console.ForegroundColor = ConsoleColor.White;
+                            Console.WriteLine($"2. Make lineup");
+                        }
+                        else
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine($"2. Make lineup");
+                        }
+                        if (club.HasThatPermission(staff, "See lineup"))
+                        {
+                            Console.ForegroundColor = ConsoleColor.White;
+                            Console.WriteLine($"3. See lineup");
+                        }
+                        else
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine($"3. See lineup");
+                        }
+                        if (club.HasThatPermission(staff, "Make team training session"))
+                        {
+                            Console.ForegroundColor = ConsoleColor.White;
+                            Console.WriteLine($"4. Make team training session");
+                        }
+                        else
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine($"4. Make team training session");
+                        }
+                        if (club.HasThatPermission(staff, "Hire staff"))
+                        {
+                            Console.ForegroundColor = ConsoleColor.White;
+                            Console.WriteLine($"5. Hire club member");
+                        }
+                        else
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine($"5. Hire club member");
+                        }
+                        if (club.HasThatPermission(staff, "Sack staff"))
+                        {
+                            Console.ForegroundColor = ConsoleColor.White;
+                            Console.WriteLine($"6. Sack club member");
+                        }
+                        else
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine($"6. Sack club member");
+                        }
+                        if (club.HasThatPermission(staff, "Heal player"))
+                        {
+                            Console.ForegroundColor = ConsoleColor.White;
+                            Console.WriteLine($"7. Heal player");
+                        }
+                        else
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine($"7. Heal player");
+                        }
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Console.WriteLine("8. Logout");
+                        Console.WriteLine("9. Exit");
+                        string choice = Console.ReadLine();
+                        Console.Clear();
+                        switch (choice)
+                        {
+                            case "1":
+                                Console.WriteLine("1. Send message");
+                                Console.WriteLine("2. See messages");
+                                string choice1 = Console.ReadLine();
+                                Console.Clear();
+                                switch (choice1)
+                                {
+                                    case "1":
+                                        club.SendMessage(staff);
+                                        break;
+                                    case "2":
+                                        club.MyMessages(staff);
+                                        break;
+                                    default:
+                                        Console.WriteLine("Invalid choice");
+                                        break;
+                                }
+                                break;
+                            case "2":
+                                if (club.HasThatPermission(staff, "Make lineup"))
+                                {
+                                    club.SetLineup();
+                                }
+                                else
+                                {
+                                    Console.WriteLine("You don't have permission to do that");
+                                }
+                                break;
+                            case "3":
+                                if (club.HasThatPermission(staff, "See lineup"))
+                                {
+                                    club.SeeLineup();
+                                }
+                                else
+                                {
+                                    Console.WriteLine("You don't have permission to do that");
+                                }
+                                break;
+                            case "4":
+                                if (club.HasThatPermission(staff, "Make team training session"))
+                                {
+                                    club.MakeTeamTraining();
+                                }
+                                else
+                                {
+                                    Console.WriteLine("You don't have permission to do that");
+                                }
+                                break;
+                            case "5":
+                                if (club.HasThatPermission(staff, "Hire staff"))
+                                {
+
+                                    Random random = new Random();
+                                    Console.WriteLine("Select type of club member");
+                                    Console.WriteLine("1. Player");
+                                    Console.WriteLine("2. Staff");
+                                    string choice2 = Console.ReadLine();
+                                    Console.Clear();
+                                    switch (choice2)
+                                    {
+                                        case "1":
+                                            Console.WriteLine("Type position");
+                                            string position;
+                                            Position pos;
+                                            while (true)
+                                            {
+
+                                                position = Console.ReadLine();
+                                                if (Enum.TryParse(position, true, out pos) && Enum.IsDefined(typeof(Position), pos))
+                                                {
+                                                    break;
+                                                }
+                                                else
+                                                {
+                                                    Console.WriteLine("Invalid position. Please enter a valid position:");
+                                                }
+                                            }
+                                            Console.WriteLine("Select player number:");
+                                            int playerNumber;
+                                            var playerlist = club.Members.OfType<Player>().ToList();
+                                            while (int.TryParse(Console.ReadLine(), out playerNumber) == false || playerNumber < 1 || playerNumber > 99 || playerlist.Where(p => p.Number == playerNumber).Count() != 0)
+                                            {
+                                                Console.WriteLine("Invalid choice. Please select a valid player number.");
+                                            }
+
+                                            Player player1;
+                                            if (position == "Goalkeeper")
+                                            {
+                                                player1 = new Goalkeeper(0, random.Next(40, 90), pos, random.Next(40, 90), random.Next(40, 90), random.Next(40, 90), random.Next(40, 90), random.Next(40, 90), random.Next(40, 90), false, firstNames[random.Next(30)], lastNames[random.Next(30)], 18);
+                                            }
+                                            else
+                                            {
+                                                player1 = new Player(0, pos, random.Next(40, 90), random.Next(40, 90), random.Next(40, 90), random.Next(40, 90), random.Next(40, 90), random.Next(40, 90), false, firstNames[random.Next(30)], lastNames[random.Next(30)], 18);
+                                            }
+                                            club.HireClubMember(player1);
+                                            break;
+                                        case "2":
+                                            Console.WriteLine("Select type of staff");
+                                            Console.WriteLine($"Medic");
+                                            Console.WriteLine($"Coach");
+                                            string stafftype;
+                                            Role role;
+                                            while (true)
+                                            {
+                                                stafftype = Console.ReadLine();
+                                                if (Enum.TryParse(stafftype, true, out role) && Enum.IsDefined(typeof(Role), role))
+                                                {
+                                                    break;
+                                                }
+                                                else
+                                                {
+                                                    Console.WriteLine("Invalid role. Please enter a valid role:");
+                                                }
+                                            }
+                                            Staff staff1 = new Staff(role, firstNames[random.Next(30)], lastNames[random.Next(30)], random.Next(2, 40), random.Next(1, 10), null);
+                                            club.HireClubMember(staff1);
+
+
+                                            break;
+                                        default:
+                                            Console.WriteLine("Invalid choice");
+                                            break;
+                                    }
+                                }
+                                else
+                                {
+                                    Console.WriteLine("You don't have permission to do that");
+                                }
+                                break;
+                            case "6":
+                                if (club.HasThatPermission(staff, "Sack staff"))
+                                {
+                                    int i = 1;
+                                    Console.WriteLine("Select club member to sack");
+                                    foreach (var member in club.Members)
+                                    {
+                                        Console.WriteLine($"{i}. {member.FirstName} {member.LastName}");
+                                        i++;
+
+                                    }
+                                    int choice2 = 0;
+                                    while (int.TryParse(Console.ReadLine(), out choice2) == false || choice2 < 1 || choice2 > club.Members.Count)
+                                    {
+                                        Console.WriteLine("Invalid choice. Please select a valid club member number.");
+                                    }
+                                    choice2 -= 1;
+                                    club.SackClubMember(club.Members[choice2]);
+                                }
+                                else
+                                {
+                                    Console.WriteLine("You don't have permission to do that");
+                                }
+                                break;
+                            case "7":
+                                if (club.HasThatPermission(staff, "Heal player"))
+                                {
+                                    int i = 1;
+                                    Console.WriteLine("Select player to heal");
+                                    var list = club.Members.OfType<Player>().Where(p => p.IsInjured).ToList();
+                                    foreach (var member in list)
+                                    {
+                                        Console.WriteLine($"{i}. {member.FirstName} {member.LastName}");
+                                        i++;
+                                    }
+                                    int choice2 = 0;
+                                    while (int.TryParse(Console.ReadLine(), out choice2) == false || choice2 < 1 || choice2 > club.Members.OfType<Player>().Where(p => p.IsInjured).Count())
+                                    {
+                                        Console.WriteLine("Invalid choice. Please select a valid player number.");
+                                    }
+                                    choice2 -= 1;
+                                    Player selectedPlayer = list[choice2];
+                                    List<Player> players = club.Members.OfType<Player>().ToList();
+                                    staff.StartTask(players.Where(p => p.Number == selectedPlayer.Number).FirstOrDefault());
+                                }
+                                else
+                                {
+                                    Console.WriteLine("You don't have permission to do that");
+                                }
+                                break;
+                            case "8":
+                                islogged = false;
+                                Console.WriteLine("See you soon");
+                                break;
+                            case "9":
+                                Console.WriteLine("Thanks for using our program");
+                                Environment.Exit(0);
+                                break;
+                            default:
+                                Console.WriteLine("Invalid choice");
+                                break;
+                        }
+                    }
+                    Console.ReadKey();
+                    Console.Clear();
+                }
+            }
         }
     }
 }
-
