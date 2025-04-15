@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,12 +7,12 @@ using static Clubs.Classes.clubMember;
 using static Clubs.Classes.player;
 using static Clubs.Program;
 using Task = Clubs.Program.Task;
-
+using static Clubs.IStaff;
 namespace Clubs.Classes
 {
-    internal class staff
+    internal class staff 
     {
-        public class Staff : ClubMember
+        public class Staff : ClubMember , IStaff
         {
             public int ID { get; set; }
             public int YearsOfExperience { get; set; }
