@@ -55,7 +55,7 @@ namespace Clubs
             {
                 { Role.Coach,new List<string>{"Make lineup","See lineup","Make team training session","Chat" } },
                 { Role.Medic, new List<string>{"Heal player","Chat"} },
-                { Role.Boss, new List<string>{"See lineup","Sack staff","Hire staff"} },
+                { Role.Boss, new List<string>{"See lineup","Sack staff","Hire staff","Chat"} },
                 { Role.Player, new List<string>{"Chat","See lineup","Train"} }
 
             };
@@ -367,6 +367,14 @@ namespace Clubs
             }
             public void SetLineup()
             {
+                using(var context = new AppDbContext())
+                {
+                    foreach (var item in Lineup)
+                    {
+                        context.lineup.Remove(new Lineup(item.Key.Number, item.Value));
+                        context.SaveChanges();
+                    }
+                }
                 int numDefenders = 0;
                 int numMidfielders = 0;
                 int numForwards = 0;
@@ -450,7 +458,7 @@ namespace Clubs
                 Player selectedGoalkeeper = goalkeepers[gkNumber];
                 Lineup.Add(selectedGoalkeeper, Position.Goalkeeper);
                 availablePlayers.Remove(selectedGoalkeeper);
-
+                Console.Clear();
                 // Assign defenders with multiple players per position
                 Console.WriteLine("\n=== DEFENDERS ===");
                 for (int i = 0; i < numDefenders; i++)
@@ -479,7 +487,7 @@ namespace Clubs
                     {
                         Console.WriteLine("Invalid choice. Please select a valid player number.");
                     }
-
+                    playerNumber -= 1;
                     // Get the selected player
                     var orderedPlayers = availablePlayers.OrderByDescending(p => p.Position == defenderPos).ToList();
                     Player selectedDefender = orderedPlayers[playerNumber];
@@ -487,6 +495,7 @@ namespace Clubs
 
                     Lineup.Add(selectedDefender, defenderPos);
                     availablePlayers.Remove(selectedDefender);
+                    Console.Clear();
                 }
 
                 // Assign midfielders with multiple players per position
@@ -525,6 +534,7 @@ namespace Clubs
 
                     Lineup.Add(selectedMidfielder, midfielderPos);
                     availablePlayers.Remove(selectedMidfielder);
+                    Console.Clear();
                 }
 
                 // Assign forwards with multiple players per position
@@ -569,7 +579,13 @@ namespace Clubs
                 // Display final lineup
                 Console.WriteLine("\nLineup set successfully!");
                 Console.WriteLine("\n=== SELECTED LINEUP ===");
-
+                using(var content =new AppDbContext()){
+                    foreach(var item in Lineup)
+                    {
+                        content.lineup.Add(new Lineup(item.Key.Number,item.Value));
+                        content.SaveChanges();
+                    }
+                }
                 // Group by base position (without the +i modification)
                 SeeLineup();
             }
@@ -580,11 +596,36 @@ namespace Clubs
                 {
                     if (clubMember is Player player)
                     {
-                        context.players.Add(player);
+                        if(player is Goalkeeper goalkeeper)
+                        {
+                            context.goalkeepers.Add(goalkeeper);
+                            context.logDatas.Add(new LogData
+                            {
+                                Member_ID = goalkeeper.Number,
+                                Login = goalkeeper.FirstName.ToLower()+"."+goalkeeper.LastName.ToLower()+"@"+goalkeeper.Role,
+                                Password = HashPassword( goalkeeper.Role.ToString() + goalkeeper.Number.ToString())
+                            });
+                        }
+                        else
+                        {
+                            context.players.Add(player);
+                            context.logDatas.Add(new LogData
+                            {
+                                Member_ID = player.Number,
+                                Login = player.FirstName.ToLower() + "." + player.LastName.ToLower() + "@" + player.Role,
+                                Password = HashPassword(player.Role.ToString() + player.Number.ToString())
+                            });
+                        }
                     }
                     else if (clubMember is Staff staff)
                     {
                         context.staff.Add(staff);
+                        context.logDatas.Add(new LogData
+                        {
+                            Member_ID = staff.ID,
+                            Login = staff.FirstName.ToLower() + "." + staff.LastName.ToLower() + "@" + staff.Role,
+                            Password = HashPassword(staff.Role.ToString() + staff.ID.ToString())
+                        });
                     }
                     context.SaveChanges();
                 }
@@ -1203,11 +1244,11 @@ namespace Clubs
                                             Player player1;
                                             if (position == "Goalkeeper")
                                             {
-                                                player1 = new Goalkeeper(0, random.Next(40, 90), pos, random.Next(40, 90), random.Next(40, 90), random.Next(40, 90), random.Next(40, 90), random.Next(40, 90), random.Next(40, 90), false, firstNames[random.Next(30)], lastNames[random.Next(30)], 18);
+                                                player1 = new Goalkeeper(playerNumber, random.Next(40, 90), pos, random.Next(40, 90), random.Next(40, 90), random.Next(40, 90), random.Next(40, 90), random.Next(40, 90), random.Next(40, 90), false, firstNames[random.Next(30)], lastNames[random.Next(30)], 18);
                                             }
                                             else
                                             {
-                                                player1 = new Player(0, pos, random.Next(40, 90), random.Next(40, 90), random.Next(40, 90), random.Next(40, 90), random.Next(40, 90), random.Next(40, 90), false, firstNames[random.Next(30)], lastNames[random.Next(30)], 18);
+                                                player1 = new Player(playerNumber, pos, random.Next(40, 90), random.Next(40, 90), random.Next(40, 90), random.Next(40, 90), random.Next(40, 90), random.Next(40, 90), false, firstNames[random.Next(30)], lastNames[random.Next(30)], 18);
                                             }
                                             club.HireClubMember(player1);
                                             break;
@@ -1229,7 +1270,8 @@ namespace Clubs
                                                     Console.WriteLine("Invalid role. Please enter a valid role:");
                                                 }
                                             }
-                                            Staff staff1 = new Staff(role, firstNames[random.Next(30)], lastNames[random.Next(30)], random.Next(2, 40), random.Next(1, 10), null);
+                                            var staffmaxid = club.Members.OfType<Staff>().Max(s => s.ID)+1;
+                                            Staff staff1 = new Staff(role, firstNames[random.Next(30)], lastNames[random.Next(30)], random.Next(2, 40), random.Next(1, 10), null,staffmaxid);
                                             club.HireClubMember(staff1);
 
 
