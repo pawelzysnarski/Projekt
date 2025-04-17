@@ -367,7 +367,29 @@ namespace Clubs
             }
             public void SetLineup()
             {
-                using(var context = new AppDbContext())
+                bool checker = false;
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("Warning: If you start making lineup your current lineup will be cleared.");
+                Console.ResetColor();
+                Console.WriteLine("1. Continue");
+                Console.WriteLine("2. Cancel");
+                while (!checker)
+                {
+                    string choice = Console.ReadLine();
+                    switch (choice)
+                    {
+                        case "1":
+                            checker = true;
+                            break;
+                        case "2":
+                            Console.WriteLine("Cancelled");
+                            return;
+                        default:
+                            Console.WriteLine("Invalid choice. Please select a valid option.");
+                            break;
+                    }
+                }
+                using (var context = new AppDbContext())
                 {
                     foreach (var item in Lineup)
                     {
@@ -446,7 +468,7 @@ namespace Clubs
                 var goalkeepers = availablePlayers.Where(p => p.Position == Position.Goalkeeper).ToList();
                 for (int j = 0; j < goalkeepers.Count; j++)
                 {
-                    Console.WriteLine($"{j + 1}. {goalkeepers[j].FirstName} {goalkeepers[j].LastName}");
+                    Console.WriteLine($"{j + 1}. {goalkeepers[j].FirstName} {goalkeepers[j].LastName} {goalkeepers[j].OverallStats()}");
                 }
                 int gkNumber = 0;
                 Console.WriteLine("Select goalkeeper number:");
@@ -579,10 +601,11 @@ namespace Clubs
                 // Display final lineup
                 Console.WriteLine("\nLineup set successfully!");
                 Console.WriteLine("\n=== SELECTED LINEUP ===");
-                using(var content =new AppDbContext()){
-                    foreach(var item in Lineup)
+                using (var content = new AppDbContext())
+                {
+                    foreach (var item in Lineup)
                     {
-                        content.lineup.Add(new Lineup(item.Key.Number,item.Value));
+                        content.lineup.Add(new Lineup(item.Key.Number, item.Value));
                         content.SaveChanges();
                     }
                 }
@@ -596,38 +619,58 @@ namespace Clubs
                 {
                     if (clubMember is Player player)
                     {
-                        if(player is Goalkeeper goalkeeper)
+                        try
                         {
-                            context.goalkeepers.Add(goalkeeper);
-                            context.logDatas.Add(new LogData
+                            if (player is Goalkeeper goalkeeper)
                             {
-                                Member_ID = goalkeeper.Number,
-                                Login = goalkeeper.FirstName.ToLower()+"."+goalkeeper.LastName.ToLower()+"@"+goalkeeper.Role,
-                                Password = HashPassword( goalkeeper.Role.ToString() + goalkeeper.Number.ToString())
-                            });
+                                context.goalkeepers.Add(goalkeeper);
+                                context.logDatas.Add(new LogData
+                                {
+                                    Member_ID = goalkeeper.Number,
+                                    Login = goalkeeper.FirstName.ToLower() + "." + goalkeeper.LastName.ToLower() + "@" + goalkeeper.Role,
+                                    Password = HashPassword(goalkeeper.Role.ToString() + goalkeeper.Number.ToString())
+                                });
+                            }
+                            else
+                            {
+                                context.players.Add(player);
+                                context.logDatas.Add(new LogData
+                                {
+                                    Member_ID = player.Number,
+                                    Login = player.FirstName.ToLower() + "." + player.LastName.ToLower() + "@" + player.Role,
+                                    Password = HashPassword(player.Role.ToString() + player.Number.ToString())
+                                });
+
+
+                            }
+                            context.SaveChanges();
                         }
-                        else
+
+                        catch (Exception ex)
                         {
-                            context.players.Add(player);
-                            context.logDatas.Add(new LogData
-                            {
-                                Member_ID = player.Number,
-                                Login = player.FirstName.ToLower() + "." + player.LastName.ToLower() + "@" + player.Role,
-                                Password = HashPassword(player.Role.ToString() + player.Number.ToString())
-                            });
+                            Console.WriteLine("Error: " + ex.Message);
                         }
                     }
+
                     else if (clubMember is Staff staff)
                     {
-                        context.staff.Add(staff);
-                        context.logDatas.Add(new LogData
+                        try
                         {
-                            Member_ID = staff.ID,
-                            Login = staff.FirstName.ToLower() + "." + staff.LastName.ToLower() + "@" + staff.Role,
-                            Password = HashPassword(staff.Role.ToString() + staff.ID.ToString())
-                        });
+                            context.staff.Add(staff);
+                            context.logDatas.Add(new LogData
+                            {
+                                Member_ID = staff.ID,
+                                Login = staff.FirstName.ToLower() + "." + staff.LastName.ToLower() + "@" + staff.Role,
+                                Password = HashPassword(staff.Role.ToString() + staff.ID.ToString())
+                            });
+
+                            context.SaveChanges();
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("Error: " + ex.Message);
+                        }
                     }
-                    context.SaveChanges();
                 }
                 Console.WriteLine($"{clubMember.FirstName} {clubMember.LastName} hired to the club.");
             }
@@ -640,41 +683,49 @@ namespace Clubs
                 }
                 else
                 {
-                    if (clubMember is Player player)
+                    try
                     {
-                        using (var context = new AppDbContext())
+                        if (clubMember is Player player)
                         {
-                            var playerToRemove = context.players.Find(player.Number);
-                            if (playerToRemove != null)
+                            using (var context = new AppDbContext())
                             {
-                                if (Lineup.ContainsKey(playerToRemove))
+                                var playerToRemove = context.players.Find(player.Number);
+                                if (playerToRemove != null)
                                 {
-                                    Console.WriteLine("You cannot remove player who is in current lineup");
+                                    if (Lineup.ContainsKey(playerToRemove))
+                                    {
+                                        Console.WriteLine("You cannot remove player who is in current lineup");
+                                    }
+                                    else
+                                    {
+                                        context.players.Remove(playerToRemove);
+                                        context.logDatas.Remove(context.logDatas.FirstOrDefault(ld => ld.Member_ID == playerToRemove.Number));
+                                        context.SaveChanges();
+                                        Console.WriteLine($"{playerToRemove.FirstName} {playerToRemove.LastName} was sacked from club");
+                                    }
                                 }
-                                else
+                            }
+                        }
+                        else if (clubMember is Staff staff)
+                        {
+                            using (var context = new AppDbContext())
+                            {
+                                var staffToRemove = context.staff.Find(staff.ID);
+                                if (staffToRemove != null)
                                 {
-                                    context.players.Remove(playerToRemove);
+                                    context.staff.Remove(staffToRemove);
+                                    context.logDatas.Remove(context.logDatas.FirstOrDefault(ld => ld.Member_ID == staffToRemove.ID));
                                     context.SaveChanges();
-                                    Console.WriteLine($"{playerToRemove.FirstName} {playerToRemove.LastName} was removed from club");
+                                    Console.WriteLine($"{staffToRemove.FirstName} {staffToRemove.LastName} was sacked from club");
                                 }
                             }
                         }
                     }
-                    else if (clubMember is Staff staff)
+                    catch (Exception ex)
                     {
-                        using (var context = new AppDbContext())
-                        {
-                            var staffToRemove = context.staff.Find(staff.ID);
-                            if (staffToRemove != null)
-                            {
-                                context.staff.Remove(staffToRemove);
-                                context.SaveChanges();
-                                Console.WriteLine($"{staffToRemove.FirstName} {staffToRemove.LastName} was removed from club");
-                            }
-                        }
+                        Console.WriteLine("Error: " + ex.Message);
                     }
                 }
-                Console.WriteLine($"{clubMember.FirstName} {clubMember.LastName} sacked from the club.");
             }
             public void MakeTeamTraining()
             {
@@ -765,8 +816,8 @@ namespace Clubs
         {
             Console.WriteLine($"Task ended for {staff.FirstName} {staff.LastName}");
         }
-        
-        
+
+
         public class Lineup
         {
             public int Number { get; set; }
@@ -778,9 +829,9 @@ namespace Clubs
                 Position = position;
             }
         }
-        
 
-        
+
+
         public class Task
         {
             public int Member_ID { get; set; }
@@ -803,7 +854,7 @@ namespace Clubs
                 }
             }
         }
-        
+
         public class Message
         {
             public int ID { get; set; }
@@ -838,7 +889,7 @@ namespace Clubs
                 IsReaded = isReaded;
             }
         }
-        
+
 
         static void Main(string[] args)
         {
@@ -1270,8 +1321,8 @@ namespace Clubs
                                                     Console.WriteLine("Invalid role. Please enter a valid role:");
                                                 }
                                             }
-                                            var staffmaxid = club.Members.OfType<Staff>().Max(s => s.ID)+1;
-                                            Staff staff1 = new Staff(role, firstNames[random.Next(30)], lastNames[random.Next(30)], random.Next(2, 40), random.Next(1, 10), null,staffmaxid);
+                                            var staffmaxid = club.Members.OfType<Staff>().Max(s => s.ID) + 1;
+                                            Staff staff1 = new Staff(role, firstNames[random.Next(30)], lastNames[random.Next(30)], random.Next(2, 40), random.Next(1, 10), null, staffmaxid);
                                             club.HireClubMember(staff1);
 
 
