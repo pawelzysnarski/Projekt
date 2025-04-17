@@ -30,8 +30,8 @@ CREATE TABLE IF NOT EXISTS `goalkeepers` (
 -- Zrzucanie danych dla tabeli club.goalkeepers: ~3 rows (około)
 INSERT INTO `goalkeepers` (`Number`, `GoalkeeperStats`) VALUES
 	(17, 85),
-	(30, 57),
-	(41, 71);
+	(41, 57),
+	(98, 71);
 
 -- Zrzut struktury tabela club.lineup
 CREATE TABLE IF NOT EXISTS `lineup` (
@@ -40,19 +40,7 @@ CREATE TABLE IF NOT EXISTS `lineup` (
   PRIMARY KEY (`Number`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
--- Zrzucanie danych dla tabeli club.lineup: ~11 rows (około)
-INSERT INTO `lineup` (`Number`, `Position`) VALUES
-	(1, 'Striker'),
-	(2, 'CentreBack'),
-	(4, 'DefensiveMidfielder'),
-	(9, 'Striker'),
-	(13, 'LeftBack'),
-	(15, 'Striker'),
-	(17, 'Goalkeeper'),
-	(27, 'CentreBack'),
-	(42, 'Midfielder'),
-	(70, 'OffensiveMidfielder'),
-	(92, 'RightBack');
+-- Zrzucanie danych dla tabeli club.lineup: ~0 rows (około)
 
 -- Zrzut struktury tabela club.logdatas
 CREATE TABLE IF NOT EXISTS `logdatas` (
@@ -62,7 +50,7 @@ CREATE TABLE IF NOT EXISTS `logdatas` (
   PRIMARY KEY (`Member_ID`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
--- Zrzucanie danych dla tabeli club.logdatas: ~34 rows (około)
+-- Zrzucanie danych dla tabeli club.logdatas: ~32 rows (około)
 INSERT INTO `logdatas` (`Member_ID`, `Login`, `Password`) VALUES
 	(1, 'arek.goat@Player', 'TDSKhnYbj/u9RMvoEKsyC254X6Lmn98eJWLLS7k5VZA='),
 	(2, 'ben.me@Player', 'Wg9vBKSOiAua1srSmxfHNh5vmonZJVvwNzZYUElcGWI='),
@@ -95,9 +83,7 @@ INSERT INTO `logdatas` (`Member_ID`, `Login`, `Password`) VALUES
 	(101, 'jan.kowalski@Boss', '5yy68dsU5Rzk1wyO+Km8Y5NDJS54uBshiSwkYZekQWM='),
 	(102, 'michał.prodiż@Coach', 'NYN4pZwR/dMzuJs3/xffFiY9bJP2C5kYmzrbk6c+eSI='),
 	(103, 'antoine.dedeme@Medic', 'mJDrPpfgxjY8DLeVYz8wKzJt6lGNui/tNVdlcKneZyM='),
-	(104, 'carlo.viniary@Medic', 'l6Pr6JXOZxfoMAbDmTuJ5T2SBF3AGg3o/TNWTUkuacA='),
-	(105, 'stefan.zagajnik@Scout', 'nfEON9LPMuEJ4kTYGTd0bGuOk9KKG86RRaN0ZIxpz14='),
-	(106, 'antonio.conti@Scout', 'INlJ7YeOBJp1syEmXp2LObzscQ3uXfo+nzXIO5lARMk=');
+	(104, 'carlo.viniary@Medic', 'l6Pr6JXOZxfoMAbDmTuJ5T2SBF3AGg3o/TNWTUkuacA=');
 
 -- Zrzut struktury tabela club.messages
 CREATE TABLE IF NOT EXISTS `messages` (
@@ -109,7 +95,7 @@ CREATE TABLE IF NOT EXISTS `messages` (
   PRIMARY KEY (`ID`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=62 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
--- Zrzucanie danych dla tabeli club.messages: ~61 rows (około)
+-- Zrzucanie danych dla tabeli club.messages: ~59 rows (około)
 INSERT INTO `messages` (`ID`, `Sender_Name`, `Member_ID`, `Content`, `IsReaded`) VALUES
 	(1, 'Arek Goat', 2, 'Goat Goat Goat', 1),
 	(2, 'Arek Goat', 4, 'Goat Goat Goat', 0),
@@ -189,7 +175,7 @@ CREATE TABLE IF NOT EXISTS `players` (
   UNIQUE KEY `Number` (`Number`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
--- Zrzucanie danych dla tabeli club.players: ~25 rows (około)
+-- Zrzucanie danych dla tabeli club.players: ~28 rows (około)
 INSERT INTO `players` (`FirstName`, `LastName`, `Position`, `Pace`, `Shooting`, `Passing`, `Dribling`, `Defense`, `Physical`, `Number`, `IsInjured`, `Age`) VALUES
 	('Arek', 'Goat', 'Striker', 86, 98, 91, 92, 62, 95, 1, 0, 21),
 	('Ben', 'Me', 'CentreBack', 82, 61, 87, 88, 98, 92, 2, 0, 37),
